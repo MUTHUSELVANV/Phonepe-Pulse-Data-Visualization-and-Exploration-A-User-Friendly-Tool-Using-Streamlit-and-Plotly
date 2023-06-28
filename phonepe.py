@@ -15,7 +15,9 @@ import json
 from sqlalchemy import create_engine
 #import cryptography
 import statistics
-
+import geopandas as gpd
+#import folium
+#from streamlit_folium import st_folium
 
 repo_url = 'https://github.com/PhonePe/pulse.git'
 local_dir = 'C:/Users/admin/Desktop/Streamlit/PhonePe'
@@ -2373,8 +2375,8 @@ def delmysql():
 
 def displayplot(am,tu):
 
-    ypd = st.radio("Choose from the below",('yearwise Plot Diplay','Label Analysis','State wise Display'))   
-    if ypd == 'yearwise Plot Diplay':
+    ypd = st.radio("Choose from the below",('yearwise Plot Display','Label Analysis','State wise Display'))   
+    if ypd == 'yearwise Plot Display':
         kf=1000
         base_path = os.path.join(local_dir, f'pulse/data/{am}/{tu}/country/india')
         sbase_path = os.path.join(local_dir, f'pulse/data/{am}/{tu}/hover/country/india')
@@ -3050,6 +3052,7 @@ def displayplot(am,tu):
         kf+=1
         base_path = os.path.join(local_dir, f'pulse/data/{am}/{tu}/country/india/state/{cf1}')
         sbase_path = os.path.join(local_dir, f'pulse/data/{am}/{tu}/hover/country/india/state/{cf1}')
+        st.header(cf1)
 
         cnt=[]
         amt=[]
@@ -3632,7 +3635,7 @@ def displayplot(am,tu):
         kf+=1
         base_path = os.path.join(local_dir, f'pulse/data/{am}/{tu}/country/india/state/{cf1}')
         sbase_path = os.path.join(local_dir, f'pulse/data/{am}/{tu}/hover/country/india/state/{cf1}')
-
+        st.header(cf1,'Plots')
         cnt=[]
         amt=[]
         com=[]
@@ -4140,7 +4143,7 @@ def displayplot(am,tu):
                 plt.ylabel('Amount')
                 plt.xlabel('Label')
                 plt.xticks(rotation=90)
-                plt.title(f'Comparing the Amount of {uni_name[i]} Yearwise:') 
+                plt.title(f'Comparing the Amount for the {yrs[i]}:') 
                 plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
                 st.pyplot(fig)
 
@@ -4203,12 +4206,12 @@ def displayplot(am,tu):
                 cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
 
             for i in range(len(cum_count)):
-                st.write(f'Comparing the count of {uni_name[i]} Yearwise:')
+                st.write(f'Comparing the Registered Users count of {uni_name[i]} Yearwise:')
                 fig = plt.figure(figsize=(10, 4))
                 sns.barplot(x=0,y=1,data=cnt[i])
                 plt.ylabel('Registered Users')
                 plt.xlabel('Year')
-                plt.title(f'Comparing the count of {uni_name[i]} Yearwise:') 
+                plt.title(f'Comparing the Registered Users count of {uni_name[i]} Yearwise:') 
                 plt.plot(cnt[i][0], cnt[i][1], color='blue', marker='o')
                 st.pyplot(fig)
 
@@ -4232,13 +4235,13 @@ def displayplot(am,tu):
 
 
             for i in range(len(yw)):
-                st.write(f'Comparing the Count for the {yrs[i]}:')
+                st.write(f'Comparing the Registered Users Count for the {yrs[i]}:')
                 fig = plt.figure(figsize=(10, 4))
                 sns.barplot(x=0,y=1,data=yy[i])
                 plt.ylabel('User Count')
                 plt.xlabel('Name')
                 plt.xticks(rotation=90)
-                plt.title(f'Comparing the Count for the {yrs[i]}:') 
+                plt.title(f'Comparing the Registered Users Count for the {yrs[i]}:') 
                 plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
                 st.pyplot(fig)
 
@@ -4751,6 +4754,324 @@ def displayplot(am,tu):
                 plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
                 st.pyplot(fig)
 
+def geolive(tu):
+    kf=1000
+    sbase_path = os.path.join(local_dir, f'pulse/data/map/{tu}/hover/country/india')
+    cnt=[]
+    amt=[]
+    com=[]
+    agg=[]
+    uc=[]
+    per=[]    
+    yr=['2018','2019','2020','2021','2022'] 
+
+    india_states = json.load(open(r"C:\Users\admin\Desktop\Streamlit\states_india.geojson", "r"))
+
+
+    for i in range(len(india_states["features"])):
+        if india_states["features"][i]["properties"]["st_nm"] == 'Daman & Diu':
+            india_states["features"][i]["properties"]["st_nm"] = 'Dadra And Nagar Haveli And Daman And Diu'
+        if india_states["features"][i]["properties"]["st_nm"] == 'Andaman & Nicobar Island':
+            india_states["features"][i]["properties"]["st_nm"] = 'Andaman And Nicobar Islands'
+    #    if india_states["features"][i]["properties"]["st_nm"] == 'Daman & Diu':
+    #        india_states["features"][i]["properties"]["st_nm"] = 'Ladakh'
+        if india_states["features"][i]["properties"]["st_nm"] == 'Jammu & Kashmir':
+            india_states["features"][i]["properties"]["st_nm"] = 'Jammu And Kashmir'
+        if india_states["features"][i]["properties"]["st_nm"] == 'Arunanchal Pradesh':
+            india_states["features"][i]["properties"]["st_nm"] = 'Arunachal Pradesh'
+        if india_states["features"][i]["properties"]["st_nm"] == 'NCT of Delhi':
+            india_states["features"][i]["properties"]["st_nm"] = 'Delhi'
+
+    if tu=='transaction':
+        for i in yr:
+            base_path1 = os.path.join(sbase_path, f'{i}')
+
+            sd1=[]
+            sd2=[]
+            sd3=[]
+            sd4=[]
+
+
+            qt = ['1','2','3','4']
+            for j in qt:
+
+                base_path2 = os.path.join(base_path1, f'{j}.json')
+
+                with open(base_path2, 'r') as file:
+                    data = file.read()
+                    # Parse the JSON data
+                    data = json.loads(data)
+
+                    temp1=[]
+                    temp2=[]
+                    temp3=[]
+                    temp4=[]
+                    tn1 = []
+                    tn2 = []
+
+                    if 'hoverDataList' in data['data'] and isinstance(data['data']['hoverDataList'], list):
+                        # Iterate over the transaction data and extract relevant details
+                        for j in range(len(data['data']['hoverDataList'])):
+                            temp1.append(data['data']['hoverDataList'][j].get('name',0))
+                            temp2.append(data['data']['hoverDataList'][j]['metric'][0].get('type',''))
+                            temp3.append(data['data']['hoverDataList'][j]['metric'][0].get('count',0))
+                            temp4.append(data['data']['hoverDataList'][j]['metric'][0].get('amount',0))
+                            
+                    sd1.append(temp1)
+                    sd2.append(temp2)
+                    sd3.append(temp3)
+                    sd4.append(temp4)
+
+                    com.append(pd.DataFrame({'Name': sd1[-1], 'Type': sd2[-1], 'Count': sd3[-1], 'Amount': sd4[-1]}))
+
+                    if 'hoverDataList' not in data['data'] and not isinstance(data['data']['hoverDataList'], list):
+                        com.append(pd.DataFrame(columns=['Name','Type', 'Count', 'Amount']))
+
+
+        uni_name = com[0]['Name'].unique()
+
+        cum_count=[]
+        for i in uni_name:
+            tem2 = []
+            for j in range(0,len(com),4):
+                tem1 = 0
+                for k in range(4):
+                    for s in range(len(uni_name)):
+                        if i == com[j+k]['Name'][s]:
+                            tem1+= com[j+k]['Count'][s]
+                tem2.append(tem1/4)
+            cum_count.append(tem2)
+
+
+
+        for i in range(len(cum_count)):
+            cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
+
+        cum_amt=[]
+        for i in uni_name:
+            tem2 = []
+            for j in range(0,len(com),4):
+                tem1 = 0
+                for k in range(4):
+                    for s in range(len(uni_name)):
+                        if i == com[j+k]['Name'][s]:
+                            tem1+= com[j+k]['Amount'][s]
+                tem2.append(tem1/4)
+            cum_amt.append(tem2)
+
+
+        for i in range(len(cum_amt)):
+            amt.append(pd.DataFrame(list(zip(yr,cum_amt[i]))))
+
+
+        yw=[]
+        yrs=['2018','2019','2020','2021','2022']
+        for i in yrs:
+            tent1=[]
+            for j in range(len(cnt)):
+                tent=[]
+                for s in range(len(cnt[j][0])):
+                    if i == cnt[j][0][s]:
+                        tent= cnt[j][1][s]
+                tent1.append(tent)
+            yw.append(tent1)
+
+
+
+        yy=[]
+        for i in range(len(yw)):
+            yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+
+
+        yw=[]
+        yrs=['2018','2019','2020','2021','2022']
+        for i in yrs:
+            tent1=[]
+            for j in range(len(amt)):
+                tent=[]
+                for s in range(len(amt[j][0])):
+                    if i == amt[j][0][s]:
+                        tent= amt[j][1][s]
+                tent1.append(tent)
+            yw.append(tent1)
+
+
+        yx=[]
+        for i in range(len(yw)):
+            yx.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+
+
+        state_id_map = {}
+        for feature in india_states["features"]:
+            feature["id"] = feature["properties"]["state_code"]
+            state_id_map[feature["properties"]["st_nm"]] = feature["id"]
+    
+        kky=100
+        opt=['2018','2019','2020','2021','2022']
+        year= st.selectbox('Select the year', opt, key=kky)
+        kky+=1
+        i = opt.index(year)
+
+        yy[i][0] = yy[i][0].apply(lambda x:x.replace("&", "and") if('&' in x) else x)
+
+        yy[i][0] = yy[i][0].apply(lambda x: x.title())
+        yy[i] = yy[i][yy[i][0]!='Ladakh']
+#        st.write(yy) 
+        yy[i]["id1"] = yy[i][0].apply(lambda x: state_id_map[x])
+
+        yy[i] = yy[i].rename(columns={0: 'Name',1: 'Count'})
+
+        df = pd.concat([yy[i], yx[i]], axis=1)
+        df = df.iloc[:,[0,1,2,4]]
+        df = df.rename(columns={1: 'Amount'})
+#        st.write(df)
+ 
+        st.header('Transaction - ')
+        st.header(f"National Count & Amount Data - India - {year}")
+        fig = px.choropleth(
+            df,
+            locations="id1",
+            geojson=india_states,
+            color='Count',
+            hover_name='Name',
+            hover_data=['Count', 'Amount'],
+            title=f"National Count Data - India - {year}",
+            color_continuous_scale="Blues", # "Viridis", "YlOrRd", "Blues", 
+        )
+        fig.update_geos(fitbounds="locations", visible=False)
+
+        # Set the layout properties
+        fig.update_layout(
+            geo=dict(bgcolor='black'),
+            paper_bgcolor='black',
+            plot_bgcolor='black',
+            margin=dict(t=0, b=0, l=0, r=0),
+            height=500,  # Adjust the height as desired
+            width=700,  # Adjust the width as desired
+            )              
+
+        st.plotly_chart(fig)
+
+
+    if tu=='user':
+        for i in yr:
+            base_path1 = os.path.join(sbase_path, f'{i}')
+
+            sd1=[]
+            sd2=[]
+            sd3=[]
+            sd4=[]
+
+
+            qt = ['1','2','3','4']
+            for j in qt:
+
+                base_path2 = os.path.join(base_path1, f'{j}.json')
+
+                with open(base_path2, 'r') as file:
+                    data = file.read()
+                    # Parse the JSON data
+                    data = json.loads(data)
+
+                    temp1=[]
+                    temp2=[]
+
+                    if 'hoverData' in data['data'] :
+                        # Iterate over the transaction data and extract relevant details
+                        for j in range(len(data['data']['hoverData'])):
+                            temp1.append(list(data['data']['hoverData'].keys())[j])
+                            temp2.append(list(data['data']['hoverData'].values())[j]['registeredUsers'])
+                            
+                    sd1.append(temp1)
+                    sd2.append(temp2)
+
+                    com.append(pd.DataFrame({'Name': sd1[-1], 'Registered Users': sd2[-1]}))
+                
+
+                    if 'hoverData' not in data['data'] :
+                        com.append(pd.DataFrame(columns=['Name','Registered Users']))
+
+        uni_name = com[0]['Name'].unique()
+
+        cum_count=[]
+
+        for i in uni_name:
+            tem2 = []
+            for j in range(0,len(com),4):
+                tem1 = 0
+                for k in range(4):
+                    for s in range(len(uni_name)):
+                        if i == com[j+k]['Name'][s]:
+                            tem1+= com[j+k]['Registered Users'][s]
+                tem2.append(tem1/4)
+            cum_count.append(tem2)
+
+
+        for i in range(len(cum_count)):
+            cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
+
+        
+
+        yw=[]
+        yrs=['2018','2019','2020','2021','2022']
+        for i in yrs:
+            tent1=[]
+            for j in range(len(cnt)):
+                tent=[]
+                for s in range(len(cnt[j][0])):
+                    if i == cnt[j][0][s]:
+                        tent= cnt[j][1][s]
+                tent1.append(tent)
+            yw.append(tent1)
+
+
+        yy=[]
+        for i in range(len(yw)):
+            yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+
+
+        state_id_map = {}
+        for feature in india_states["features"]:
+            feature["id"] = feature["properties"]["state_code"]
+            state_id_map[feature["properties"]["st_nm"]] = feature["id"]
+    
+        kpy=100
+        opt=['2018','2019','2020','2021','2022']
+        year= st.selectbox('Select the year', opt, key=kpy)
+        kpy+=1
+        i = opt.index(year)
+
+        yy[i][0] = yy[i][0].apply(lambda x:x.replace("&", "and") if('&' in x) else x)
+
+        yy[i][0] = yy[i][0].apply(lambda x: x.title())
+        yy[i] = yy[i][yy[i][0]!='Ladakh']
+#        st.write(yy) 
+        yy[i]["id1"] = yy[i][0].apply(lambda x: state_id_map[x])
+
+        st.header('User - ')
+        st.header(f"National Registered Users Data - India - {year}")
+        yy[i] = yy[i].rename(columns={1: 'Registered Users'})
+        fig = px.choropleth(
+            yy[i],
+            locations="id1",
+            geojson=india_states,
+            color='Registered Users',
+            hover_name=0,
+            hover_data=['Registered Users'],
+            color_continuous_scale="Blues", # "Viridis", "YlOrRd", "Blues", 
+        )
+        fig.update_geos(fitbounds="locations", visible=False)
+
+        # Set the layout properties
+        fig.update_layout(
+            geo=dict(bgcolor='black'),
+            paper_bgcolor='black',
+            plot_bgcolor='black',
+            margin=dict(t=0, b=0, l=0, r=0),
+            height=500,  # Adjust the height as desired
+            width=700,  # Adjust the width as desired
+)
+        st.plotly_chart(fig)
 
 
 
@@ -4766,7 +5087,22 @@ def displayplot(am,tu):
 
 
 
-st.header('Extract the data')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+st.header('Welcome')
 ky=1
 
 #oo=['Extract the data','Data Cleaning']
@@ -4849,4 +5185,10 @@ if q:
         ky+=1
         c2 = st.selectbox('Select the type of Data to be extracted', o2, key=ky+120)
         displayplot(c1,c2)
-        
+
+q1 = st.checkbox('Display GeoLive Data')
+if q1:
+    o2 = ['transaction','user']
+    c2 = st.selectbox('Select the type of Data to be extracted', o2, key=ky+120)
+    if c2:
+        geolive(c2)
