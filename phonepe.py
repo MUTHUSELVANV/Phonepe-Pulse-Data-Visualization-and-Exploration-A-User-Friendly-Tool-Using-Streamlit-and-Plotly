@@ -1,3 +1,4 @@
+from math import cos
 import streamlit as st
 import pandas as pd
 from googleapiclient.discovery import build
@@ -3624,18 +3625,9 @@ def displayplot(am,tu):
 
 
     if ypd == 'Label Analysis':
-        kf=1000
-        base_path = os.path.join(local_dir, f'pulse/data/aggregated/transaction/country/india/state')
-        # Extract the folder name from the path
-        files_and_folders = os.listdir(base_path)
 
-        states_name = [f for f in files_and_folders if os.path.isdir(os.path.join(base_path, f))]
-
-        cf1 = st.selectbox('Select the State',states_name, key=kf)
-        kf+=1
-        base_path = os.path.join(local_dir, f'pulse/data/{am}/{tu}/country/india/state/{cf1}')
-        sbase_path = os.path.join(local_dir, f'pulse/data/{am}/{tu}/hover/country/india/state/{cf1}')
-        st.header(cf1,'Plots')
+        base_path = os.path.join(local_dir, f'pulse/data/{am}/{tu}/country/india')
+        sbase_path = os.path.join(local_dir, f'pulse/data/{am}/{tu}/hover/country/india')
         cnt=[]
         amt=[]
         com=[]
@@ -3643,1116 +3635,2240 @@ def displayplot(am,tu):
         uc=[]
         per=[]
         yr=['2018','2019','2020','2021','2022'] 
-        if am == 'aggregated' and tu=='transaction':
-            for i in yr:
-                base_path1 = os.path.join(base_path, f'{i}')
-
-                sd1=[]
-                sd2=[]
-                sd3=[]
-                sd4=[]
 
 
-                qt = ['1','2','3','4']
-                for j in qt:
-
-                    base_path2 = os.path.join(base_path1, f'{j}.json')
-
-                    with open(base_path2, 'r') as file:
-                        data = file.read()
-                        # Parse the JSON data
-                        data = json.loads(data)
-
-                        temp1=[]
-                        temp2=[]
-                        temp3=[]
-                        temp4=[]
-                        tn1 = []
-                        tn2 = []
-
-                        for k in range(len(data['data']['transactionData'])):
-                            temp1.append(data['data']['transactionData'][k].get('name',0))
-                            temp2.append(data['data']['transactionData'][k]['paymentInstruments'][0].get('type',''))
-                            temp3.append(data['data']['transactionData'][k]['paymentInstruments'][0].get('count',0))
-                            temp4.append(data['data']['transactionData'][k]['paymentInstruments'][0].get('amount',0))
-                                
-                    sd1.append(temp1)
-                    sd2.append(temp2)
-                    sd3.append(temp3)
-                    sd4.append(temp4)
 
 
-                    com.append(pd.DataFrame({'Name': sd1[-1], 'Type': sd2[-1], 'Count': sd3[-1], 'Amount':sd4[-1]}))
+        kf=1000
 
-                    if 'transactionData' not in data['data'] and not isinstance(data['data']['transactionData'], list):
-                        com.append(pd.DataFrame(columns=['Name','Type', 'Count', 'Amount)']))
+        soc = ['Country','State']
+        dec = st.selectbox('Select Country/State',soc, key=kf)
+
+        kf+=1
+        if dec =='Country':
+            base_path = os.path.join(local_dir, f'pulse/data/{am}/{tu}/country/india')
+            sbase_path = os.path.join(local_dir, f'pulse/data/{am}/{tu}/hover/country/india')         
+
+            if am == 'aggregated' and tu=='transaction':
+                for i in yr:
+                    base_path1 = os.path.join(base_path, f'{i}')
+
+                    sd1=[]
+                    sd2=[]
+                    sd3=[]
+                    sd4=[]
+
+
+                    qt = ['1','2','3','4']
+                    for j in qt:
+
+                        base_path2 = os.path.join(base_path1, f'{j}.json')
+
+                        with open(base_path2, 'r') as file:
+                            data = file.read()
+                            # Parse the JSON data
+                            data = json.loads(data)
+
+                            temp1=[]
+                            temp2=[]
+                            temp3=[]
+                            temp4=[]
+                            tn1 = []
+                            tn2 = []
+
+                            for k in range(len(data['data']['transactionData'])):
+                                temp1.append(data['data']['transactionData'][k].get('name',0))
+                                temp2.append(data['data']['transactionData'][k]['paymentInstruments'][0].get('type',''))
+                                temp3.append(data['data']['transactionData'][k]['paymentInstruments'][0].get('count',0))
+                                temp4.append(data['data']['transactionData'][k]['paymentInstruments'][0].get('amount',0))
+                                    
+                        sd1.append(temp1)
+                        sd2.append(temp2)
+                        sd3.append(temp3)
+                        sd4.append(temp4)
+
+
+                        com.append(pd.DataFrame({'Name': sd1[-1], 'Type': sd2[-1], 'Count': sd3[-1], 'Amount':sd4[-1]}))
+
+                        if 'transactionData' not in data['data'] and not isinstance(data['data']['transactionData'], list):
+                            com.append(pd.DataFrame(columns=['Name','Type', 'Count', 'Amount)']))
+
+
+                uni_name = com[0]['Name'].unique()
+                cum_count=[]
+                for i in uni_name:
+                    tem2 = []
+                    for j in range(0,len(com),4):
+                        tem1 = 0
+                        for k in range(4):
+                            for s in range(len(uni_name)):
+                                if i == com[j+k]['Name'][s]:
+                                    tem1+= com[j+k]['Count'][s]
+                        tem2.append(tem1/4)
+                    cum_count.append(tem2)
+
+
+                for i in range(len(cum_count)):
+                    cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
+
+
+                for i in range(len(cum_count)):
+                    st.write(f'Comparing the count of {uni_name[i]} Yearwise:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=cnt[i])
+                    plt.ylabel('Count')
+                    plt.xlabel('Year')
+                    plt.title(f'Comparing the count of {uni_name[i]} Yearwise:') 
+                    plt.plot(cnt[i][0], cnt[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+                cum_amt=[]
+                for i in uni_name:
+                    tem2 = []
+                    for j in range(0,len(com),4):
+                        tem1 = 0
+                        for k in range(4):
+                            for s in range(len(uni_name)):
+                                if i == com[j+k]['Name'][s]:
+                                    tem1+= com[j+k]['Amount'][s]
+                        tem2.append(tem1/4)
+                    cum_amt.append(tem2)
+
+
+                for i in range(len(cum_amt)):
+                    amt.append(pd.DataFrame(list(zip(yr,cum_amt[i]))))
+
+                for i in range(len(cum_amt)):
+                    st.write(f'Comparing the Amount of {uni_name[i]} Yearwise:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=amt[i])
+                    plt.ylabel('Amount')
+                    plt.xlabel('Year')
+                    plt.title(f'Comparing the Amount of {uni_name[i]} Yearwise:') 
+                    plt.plot(amt[i][0], amt[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+                yw=[]
+                yrs=['2018','2019','2020','2021','2022']
+                for i in yrs:
+                    tent1=[]
+                    for j in range(len(cnt)):
+                        tent=[]
+                        for s in range(len(cnt[j][0])):
+                            if i == cnt[j][0][s]:
+                                tent= cnt[j][1][s]
+                        tent1.append(tent)
+                    yw.append(tent1)
+
+
+                yy=[]
+                for i in range(len(yw)):
+                    yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+
+                for i in range(len(yw)):
+                    st.write(f'Comparing the Count for the {yrs[i]}:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=yy[i])
+                    plt.ylabel('Count')
+                    plt.xlabel('Label')
+                    plt.title(f'Comparing the Amount of {uni_name[i]} Yearwise:') 
+                    plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+                yw=[]
+                yrs=['2018','2019','2020','2021','2022']
+                for i in yrs:
+                    tent1=[]
+                    for j in range(len(amt)):
+                        tent=[]
+                        for s in range(len(amt[j][0])):
+                            if i == amt[j][0][s]:
+                                tent= amt[j][1][s]
+                        tent1.append(tent)
+                    yw.append(tent1)
+
+
+                yy=[]
+                for i in range(len(yw)):
+                    yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+
+                for i in range(len(yw)):
+                    st.write(f'Comparing the Amount for the {yrs[i]}:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=yy[i])
+                    plt.ylabel('Amount')
+                    plt.xlabel('Label')
+                    plt.title(f'Comparing the Amount of {uni_name[i]} Yearwise:') 
+                    plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
                 
-##           for i in range(len(com)):
-##                st.write(com[i])
+            if am == 'aggregated' and tu=='user':
+                yr =  yr=['2018','2019','2020','2021']
+                for i in yr:
+                    base_path1 = os.path.join(base_path, f'{i}')
 
-            uni_name = com[0]['Name'].unique()
-##            st.write(uni_name)
-#            cc = st.checkbox('Count Details')
-#            if cc:
-            cum_count=[]
-            for i in uni_name:
-                tem2 = []
-                for j in range(0,len(com),4):
-                    tem1 = 0
-                    for k in range(4):
-                        for s in range(len(uni_name)):
-                            if i == com[j+k]['Name'][s]:
-                                tem1+= com[j+k]['Count'][s]
-                    tem2.append(tem1/4)
-                cum_count.append(tem2)
+                    sd1=[]
+                    sd2=[]
+                    sd3=[]
+                    sd4=[]
 
 
-##            st.write(cum_count)
+                    qt = ['1','2','3','4']
+                    for j in qt:
 
-            for i in range(len(cum_count)):
-                cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
-            
-##            st.write(cnt)
+                        base_path2 = os.path.join(base_path1, f'{j}.json')
 
+                        with open(base_path2, 'r') as file:
+                            data = file.read()
+                            # Parse the JSON data
+                            data = json.loads(data)
 
-            for i in range(len(cum_count)):
-                st.write(f'Comparing the count of {uni_name[i]} Yearwise:')
-                fig = plt.figure(figsize=(10, 4))
-                sns.barplot(x=0,y=1,data=cnt[i])
-                plt.ylabel('Count')
-                plt.xlabel('Year')
-                plt.title(f'Comparing the count of {uni_name[i]} Yearwise:') 
-                plt.plot(cnt[i][0], cnt[i][1], color='blue', marker='o')
-                st.pyplot(fig)
 
 
-#            cc1 = st.checkbox('Amount Details')
-#            if cc1:
-            cum_amt=[]
-            for i in uni_name:
-                tem2 = []
-                for j in range(0,len(com),4):
-                    tem1 = 0
-                    for k in range(4):
-                        for s in range(len(uni_name)):
-                            if i == com[j+k]['Name'][s]:
-                                tem1+= com[j+k]['Amount'][s]
-                    tem2.append(tem1/4)
-                cum_amt.append(tem2)
-
-
-##            st.write(cum_count)
-
-            for i in range(len(cum_amt)):
-                amt.append(pd.DataFrame(list(zip(yr,cum_amt[i]))))
-
-            for i in range(len(cum_amt)):
-                st.write(f'Comparing the Amount of {uni_name[i]} Yearwise:')
-                fig = plt.figure(figsize=(10, 4))
-                sns.barplot(x=0,y=1,data=amt[i])
-                plt.ylabel('Amount')
-                plt.xlabel('Year')
-                plt.title(f'Comparing the Amount of {uni_name[i]} Yearwise:') 
-                plt.plot(amt[i][0], amt[i][1], color='blue', marker='o')
-                st.pyplot(fig)
-
-#            st.write(cnt[4])
-
-#            cc2 = st.checkbox('YearWise Details')
-#            if cc2:
-            yw=[]
-            yrs=['2018','2019','2020','2021','2022']
-            for i in yrs:
-                tent1=[]
-                for j in range(len(cnt)):
-                    tent=[]
-                    for s in range(len(cnt[j][0])):
-                        if i == cnt[j][0][s]:
-                            tent= cnt[j][1][s]
-                    tent1.append(tent)
-                yw.append(tent1)
-
-
-            yy=[]
-            for i in range(len(yw)):
-                yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
-
-#            st.write(yy[0][1][0][0])
-
-            for i in range(len(yw)):
-                st.write(f'Comparing the Count for the {yrs[i]}:')
-                fig = plt.figure(figsize=(10, 4))
-                sns.barplot(x=0,y=1,data=yy[i])
-                plt.ylabel('Count')
-                plt.xlabel('Label')
-                plt.title(f'Comparing the Amount of {uni_name[i]} Yearwise:') 
-                plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
-                st.pyplot(fig)
-
-            yw=[]
-            yrs=['2018','2019','2020','2021','2022']
-            for i in yrs:
-                tent1=[]
-                for j in range(len(amt)):
-                    tent=[]
-                    for s in range(len(amt[j][0])):
-                        if i == amt[j][0][s]:
-                            tent= amt[j][1][s]
-                    tent1.append(tent)
-                yw.append(tent1)
-
-
-            yy=[]
-            for i in range(len(yw)):
-                yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
-
-#            st.write(yy[0][1][0][0])
-
-            for i in range(len(yw)):
-                st.write(f'Comparing the Amount for the {yrs[i]}:')
-                fig = plt.figure(figsize=(10, 4))
-                sns.barplot(x=0,y=1,data=yy[i])
-                plt.ylabel('Amount')
-                plt.xlabel('Label')
-                plt.title(f'Comparing the Amount of {uni_name[i]} Yearwise:') 
-                plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
-                st.pyplot(fig)
-
-
-
-        if am == 'aggregated' and tu=='user':
-            yr =  yr=['2018','2019','2020','2021']
-            for i in yr:
-                base_path1 = os.path.join(base_path, f'{i}')
-
-                sd1=[]
-                sd2=[]
-                sd3=[]
-                sd4=[]
-
-
-                qt = ['1','2','3','4']
-                for j in qt:
-
-                    base_path2 = os.path.join(base_path1, f'{j}.json')
-
-                    with open(base_path2, 'r') as file:
-                        data = file.read()
-                        # Parse the JSON data
-                        data = json.loads(data)
-
-
-
-                    agg.append(data['data']['aggregated'].get('registeredUsers',0))
-
-                    temp1=[]
-                    temp2=[]
-                    temp3=[]
-
-                    if 'usersByDevice' in data['data'] and isinstance(data['data']['usersByDevice'], list):
-                        # Iterate over the transaction data and extract relevant details
-                        for j in range(len(data['data']['usersByDevice'])):
-                            temp1.append(data['data']['usersByDevice'][j].get('brand',''))
-                            temp2.append(data['data']['usersByDevice'][j].get('count',0))
-                            temp3.append(data['data']['usersByDevice'][j].get('percentage',0))
-                                
-                    sd1.append(temp1)
-                    sd2.append(temp2)
-                    sd3.append(temp3)
-
-                    com.append(pd.DataFrame({'Brand': sd1[-1], 'User Count': sd2[-1], 'Percentage(%)': sd3[-1]}))
-
-                    if 'usersByDevice' not in data['data'] and not isinstance(data['data']['usersByDevice'], list):
-                        com.append(pd.DataFrame(columns=['Brand', 'User Count', 'Percentage(%)']))
-
-
-#            for i in range(len(com)):
-#                st.write(com[i])
-
-            uni_name = com[0]['Brand'].unique()
-
-            cum_count=[]
-
-            for i in uni_name:
-                tem2 = []
-                for j in range(0,len(com),4):
-                    tem1 = 0
-                    for k in range(4):
-                        for s in range(len(uni_name)):
-                            if i == com[j+k]['Brand'][s]:
-                                tem1+= com[j+k]['User Count'][s]
-                    tem2.append(tem1/4)
-                cum_count.append(tem2)
-
-
-            for i in range(len(cum_count)):
-                cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
-
-            for i in range(len(cum_count)):
-                st.write(f'Comparing the count of {uni_name[i]} Yearwise:')
-                fig = plt.figure(figsize=(10, 4))
-                sns.barplot(x=0,y=1,data=cnt[i])
-                plt.ylabel('User Count')
-                plt.xlabel('Year')
-                plt.title(f'Comparing the count of {uni_name[i]} Yearwise:') 
-                plt.plot(cnt[i][0], cnt[i][1], color='blue', marker='o')
-                st.pyplot(fig)
-
-            cum_amt=[]
-            for i in uni_name:
-                tem2 = []
-                for j in range(0,len(com),4):
-                    tem1 = 0
-                    for k in range(4):
-                        for s in range(len(uni_name)):
-                            if i == com[j+k]['Brand'][s]:
-                                tem1+= com[j+k]['Percentage(%)'][s]
-                    tem2.append(tem1/4)
-                cum_amt.append(tem2)
-
-
-            for i in range(len(cum_amt)):
-                amt.append(pd.DataFrame(list(zip(yr,cum_amt[i]))))
-
-            for i in range(len(cum_amt)):
-                st.write(f'Comparing the Amount of {uni_name[i]} Yearwise:')
-                fig = plt.figure(figsize=(10, 4))
-                sns.barplot(x=0,y=1,data=amt[i])
-                plt.ylabel('Percentage(%)')
-                plt.xlabel('Year')
-                plt.title(f'Comparing the Amount of {uni_name[i]} Yearwise:') 
-                plt.plot(amt[i][0], amt[i][1], color='blue', marker='o')
-                st.pyplot(fig)
-
-            yw=[]
-            yrs=['2018','2019','2020','2021']
-            for i in yrs:
-                tent1=[]
-                for j in range(len(cnt)):
-                    tent=[]
-                    for s in range(len(cnt[j][0])):
-                        if i == cnt[j][0][s]:
-                            tent= cnt[j][1][s]
-                    tent1.append(tent)
-                yw.append(tent1)
-
-
-            yy=[]
-            for i in range(len(yw)):
-                yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
-
-
-            for i in range(len(yw)):
-                st.write(f'Comparing the Count for the {yrs[i]}:')
-                fig = plt.figure(figsize=(10, 4))
-                sns.barplot(x=0,y=1,data=yy[i])
-                plt.ylabel('User Count')
-                plt.xlabel('Phone Companies')
-                plt.xticks(rotation=90)
-                plt.title(f'Comparing the Count for the {yrs[i]}:') 
-                plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
-                st.pyplot(fig)
-
-            yw=[]
-            yrs=['2018','2019','2020','2021']
-            for i in yrs:
-                tent1=[]
-                for j in range(len(amt)):
-                    tent=[]
-                    for s in range(len(amt[j][0])):
-                        if i == amt[j][0][s]:
-                            tent= amt[j][1][s]
-                    tent1.append(tent)
-                yw.append(tent1)
-
-
-            yy=[]
-            for i in range(len(yw)):
-                yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
-
-#            st.write(yy[0][1][0][0])
-
-            for i in range(len(yw)):
-                st.write(f'Comparing the Percentage(%) for the {yrs[i]}:')
-                fig = plt.figure(figsize=(10, 4))
-                sns.barplot(x=0,y=1,data=yy[i])
-                plt.ylabel('Percentage(%)')
-                plt.xlabel('Phone Companies')
-                plt.xticks(rotation=90)
-                plt.title(f'Comparing the Percentage(%) for the {yrs[i]}:') 
-                plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
-                st.pyplot(fig)
-
-
-        if am == 'map' and tu=='transaction':
-            for i in yr:
-                base_path1 = os.path.join(sbase_path, f'{i}')
-
-                sd1=[]
-                sd2=[]
-                sd3=[]
-                sd4=[]
-
-
-                qt = ['1','2','3','4']
-                for j in qt:
-
-                    base_path2 = os.path.join(base_path1, f'{j}.json')
-
-                    with open(base_path2, 'r') as file:
-                        data = file.read()
-                        # Parse the JSON data
-                        data = json.loads(data)
+                        agg.append(data['data']['aggregated'].get('registeredUsers',0))
 
                         temp1=[]
                         temp2=[]
                         temp3=[]
-                        temp4=[]
-                        tn1 = []
-                        tn2 = []
 
-                        if 'hoverDataList' in data['data'] and isinstance(data['data']['hoverDataList'], list):
+                        if 'usersByDevice' in data['data'] and isinstance(data['data']['usersByDevice'], list):
                             # Iterate over the transaction data and extract relevant details
-                            for j in range(len(data['data']['hoverDataList'])):
-                                temp1.append(data['data']['hoverDataList'][j].get('name',0))
-                                temp2.append(data['data']['hoverDataList'][j]['metric'][0].get('type',''))
-                                temp3.append(data['data']['hoverDataList'][j]['metric'][0].get('count',0))
-                                temp4.append(data['data']['hoverDataList'][j]['metric'][0].get('amount',0))
-                                
+                            for j in range(len(data['data']['usersByDevice'])):
+                                temp1.append(data['data']['usersByDevice'][j].get('brand',''))
+                                temp2.append(data['data']['usersByDevice'][j].get('count',0))
+                                temp3.append(data['data']['usersByDevice'][j].get('percentage',0))
+                                    
                         sd1.append(temp1)
                         sd2.append(temp2)
                         sd3.append(temp3)
-                        sd4.append(temp4)
 
-                        com.append(pd.DataFrame({'Name': sd1[-1], 'Type': sd2[-1], 'Count': sd3[-1], 'Amount': sd4[-1]}))
+                        com.append(pd.DataFrame({'Brand': sd1[-1], 'User Count': sd2[-1], 'Percentage(%)': sd3[-1]}))
 
-                        if 'hoverDataList' not in data['data'] and not isinstance(data['data']['hoverDataList'], list):
-                            com.append(pd.DataFrame(columns=['Name','Type', 'Count', 'Amount']))
+                        if 'usersByDevice' not in data['data'] and not isinstance(data['data']['usersByDevice'], list):
+                            com.append(pd.DataFrame(columns=['Brand', 'User Count', 'Percentage(%)']))
 
-##           for i in range(len(com)):
-##                st.write(com[i])
+    #            for i in range(len(com)):
+    #                st.write(com[i])
 
-            uni_name = com[0]['Name'].unique()
-##            st.write(uni_name)
-#            cc = st.checkbox('Count Details')
-#            if cc:
-            cum_count=[]
-            for i in uni_name:
-                tem2 = []
-                for j in range(0,len(com),4):
-                    tem1 = 0
-                    for k in range(4):
-                        for s in range(len(uni_name)):
-                            if i == com[j+k]['Name'][s]:
-                                tem1+= com[j+k]['Count'][s]
-                    tem2.append(tem1/4)
-                cum_count.append(tem2)
+                uni_name = com[0]['Brand'].unique()
+
+                cum_count=[]
+
+                for i in uni_name:
+                    tem2 = []
+                    for j in range(0,len(com),4):
+                        tem1 = 0
+                        for k in range(4):
+                            for s in range(len(uni_name)):
+                                if i == com[j+k]['Brand'][s]:
+                                    tem1+= com[j+k]['User Count'][s]
+                        tem2.append(tem1/4)
+                    cum_count.append(tem2)
 
 
+                for i in range(len(cum_count)):
+                    cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
 
-            for i in range(len(cum_count)):
-                cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
-            
+                for i in range(len(cum_count)):
+                    st.write(f'Comparing the count of {uni_name[i]} Yearwise:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=cnt[i])
+                    plt.ylabel('User Count')
+                    plt.xlabel('Year')
+                    plt.title(f'Comparing the count of {uni_name[i]} Yearwise:') 
+                    plt.plot(cnt[i][0], cnt[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
 
-            for i in range(len(cum_count)):
-                st.write(f'Comparing the count of {uni_name[i]} Yearwise:')
-                fig = plt.figure(figsize=(10, 4))
-                sns.barplot(x=0,y=1,data=cnt[i])
-                plt.ylabel('Count')
-                plt.xlabel('Year')
-                plt.title(f'Comparing the count of {uni_name[i]} Yearwise:') 
-                plt.plot(cnt[i][0], cnt[i][1], color='blue', marker='o')
-                st.pyplot(fig)
-
-
-            cum_amt=[]
-            for i in uni_name:
-                tem2 = []
-                for j in range(0,len(com),4):
-                    tem1 = 0
-                    for k in range(4):
-                        for s in range(len(uni_name)):
-                            if i == com[j+k]['Name'][s]:
-                                tem1+= com[j+k]['Amount'][s]
-                    tem2.append(tem1/4)
-                cum_amt.append(tem2)
+                cum_amt=[]
+                for i in uni_name:
+                    tem2 = []
+                    for j in range(0,len(com),4):
+                        tem1 = 0
+                        for k in range(4):
+                            for s in range(len(uni_name)):
+                                if i == com[j+k]['Brand'][s]:
+                                    tem1+= com[j+k]['Percentage(%)'][s]
+                        tem2.append(tem1/4)
+                    cum_amt.append(tem2)
 
 
-            for i in range(len(cum_amt)):
-                amt.append(pd.DataFrame(list(zip(yr,cum_amt[i]))))
+                for i in range(len(cum_amt)):
+                    amt.append(pd.DataFrame(list(zip(yr,cum_amt[i]))))
 
-            for i in range(len(cum_amt)):
-                st.write(f'Comparing the Amount of {uni_name[i]} Yearwise:')
-                fig = plt.figure(figsize=(10, 4))
-                sns.barplot(x=0,y=1,data=amt[i])
-                plt.ylabel('Amount')
-                plt.xlabel('Year')
-                plt.title(f'Comparing the Amount of {uni_name[i]} Yearwise:') 
-                plt.plot(amt[i][0], amt[i][1], color='blue', marker='o')
-                st.pyplot(fig)
+                for i in range(len(cum_amt)):
+                    st.write(f'Comparing the Amount of {uni_name[i]} Yearwise:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=amt[i])
+                    plt.ylabel('Percentage(%)')
+                    plt.xlabel('Year')
+                    plt.title(f'Comparing the Amount of {uni_name[i]} Yearwise:') 
+                    plt.plot(amt[i][0], amt[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
 
-            yw=[]
-            yrs=['2018','2019','2020','2021','2022']
-            for i in yrs:
-                tent1=[]
-                for j in range(len(cnt)):
-                    tent=[]
-                    for s in range(len(cnt[j][0])):
-                        if i == cnt[j][0][s]:
-                            tent= cnt[j][1][s]
-                    tent1.append(tent)
-                yw.append(tent1)
-
-
-            yy=[]
-            for i in range(len(yw)):
-                yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
-
-            for i in range(len(yw)):
-                st.write(f'Comparing the Label for the {yrs[i]}:')
-                fig = plt.figure(figsize=(10, 4))
-                sns.barplot(x=0,y=1,data=yy[i])
-                plt.ylabel('Count')
-                plt.xlabel('District')
-                plt.xticks(rotation=90)
-                plt.title(f'Comparing the Label for the {yrs[i]}:') 
-                plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
-                st.pyplot(fig)
-
-            yw=[]
-            yrs=['2018','2019','2020','2021','2022']
-            for i in yrs:
-                tent1=[]
-                for j in range(len(amt)):
-                    tent=[]
-                    for s in range(len(amt[j][0])):
-                        if i == amt[j][0][s]:
-                            tent= amt[j][1][s]
-                    tent1.append(tent)
-                yw.append(tent1)
+                yw=[]
+                yrs=['2018','2019','2020','2021']
+                for i in yrs:
+                    tent1=[]
+                    for j in range(len(cnt)):
+                        tent=[]
+                        for s in range(len(cnt[j][0])):
+                            if i == cnt[j][0][s]:
+                                tent= cnt[j][1][s]
+                        tent1.append(tent)
+                    yw.append(tent1)
 
 
-            yy=[]
-            for i in range(len(yw)):
-                yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
-
-            for i in range(len(yw)):
-                st.write(f'Comparing the Amount for the {yrs[i]}:')
-                fig = plt.figure(figsize=(10, 4))
-                sns.barplot(x=0,y=1,data=yy[i])
-                plt.ylabel('Amount')
-                plt.xlabel('Label')
-                plt.xticks(rotation=90)
-                plt.title(f'Comparing the Amount for the {yrs[i]}:') 
-                plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
-                st.pyplot(fig)
-
-        if am == 'map' and tu=='user':
-            for i in yr:
-                base_path1 = os.path.join(sbase_path, f'{i}')
-
-                sd1=[]
-                sd2=[]
-                sd3=[]
-                sd4=[]
+                yy=[]
+                for i in range(len(yw)):
+                    yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
 
 
-                qt = ['1','2','3','4']
-                for j in qt:
+                for i in range(len(yw)):
+                    st.write(f'Comparing the Count for the {yrs[i]}:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=yy[i])
+                    plt.ylabel('User Count')
+                    plt.xlabel('Phone Companies')
+                    plt.xticks(rotation=90)
+                    plt.title(f'Comparing the Count for the {yrs[i]}:') 
+                    plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
 
-                    base_path2 = os.path.join(base_path1, f'{j}.json')
+                yw=[]
+                yrs=['2018','2019','2020','2021']
+                for i in yrs:
+                    tent1=[]
+                    for j in range(len(amt)):
+                        tent=[]
+                        for s in range(len(amt[j][0])):
+                            if i == amt[j][0][s]:
+                                tent= amt[j][1][s]
+                        tent1.append(tent)
+                    yw.append(tent1)
 
-                    with open(base_path2, 'r') as file:
-                        data = file.read()
-                        # Parse the JSON data
-                        data = json.loads(data)
 
-                        temp1=[]
-                        temp2=[]
+                yy=[]
+                for i in range(len(yw)):
+                    yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
 
-                        if 'hoverData' in data['data'] :
-                            # Iterate over the transaction data and extract relevant details
-                            for j in range(len(data['data']['hoverData'])):
-                                temp1.append(list(data['data']['hoverData'].keys())[j])
-                                temp2.append(list(data['data']['hoverData'].values())[j]['registeredUsers'])
-                                
-                        sd1.append(temp1)
-                        sd2.append(temp2)
+    #            st.write(yy[0][1][0][0])
 
-                        com.append(pd.DataFrame({'Name': sd1[-1], 'Registered Users': sd2[-1]}))
-                    
+                for i in range(len(yw)):
+                    st.write(f'Comparing the Percentage(%) for the {yrs[i]}:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=yy[i])
+                    plt.ylabel('Percentage(%)')
+                    plt.xlabel('Phone Companies')
+                    plt.xticks(rotation=90)
+                    plt.title(f'Comparing the Percentage(%) for the {yrs[i]}:') 
+                    plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
 
-                        if 'hoverData' not in data['data'] :
-                            com.append(pd.DataFrame(columns=['Name','Registered Users']))
+            if am == 'map' and tu=='transaction':
+                for i in yr:
+                    base_path1 = os.path.join(sbase_path, f'{i}')
 
-            uni_name = com[0]['Name'].unique()
+                    sd1=[]
+                    sd2=[]
+                    sd3=[]
+                    sd4=[]
 
-            cum_count=[]
 
-            for i in uni_name:
-                tem2 = []
-                for j in range(0,len(com),4):
-                    tem1 = 0
-                    for k in range(4):
-                        for s in range(len(uni_name)):
-                            if i == com[j+k]['Name'][s]:
-                                tem1+= com[j+k]['Registered Users'][s]
-                    tem2.append(tem1/4)
-                cum_count.append(tem2)
+                    qt = ['1','2','3','4']
+                    for j in qt:
+
+                        base_path2 = os.path.join(base_path1, f'{j}.json')
+
+                        with open(base_path2, 'r') as file:
+                            data = file.read()
+                            # Parse the JSON data
+                            data = json.loads(data)
+
+                            temp1=[]
+                            temp2=[]
+                            temp3=[]
+                            temp4=[]
+                            tn1 = []
+                            tn2 = []
+
+                            if 'hoverDataList' in data['data'] and isinstance(data['data']['hoverDataList'], list):
+                                # Iterate over the transaction data and extract relevant details
+                                for j in range(len(data['data']['hoverDataList'])):
+                                    temp1.append(data['data']['hoverDataList'][j].get('name',0))
+                                    temp2.append(data['data']['hoverDataList'][j]['metric'][0].get('type',''))
+                                    temp3.append(data['data']['hoverDataList'][j]['metric'][0].get('count',0))
+                                    temp4.append(data['data']['hoverDataList'][j]['metric'][0].get('amount',0))
+                                    
+                            sd1.append(temp1)
+                            sd2.append(temp2)
+                            sd3.append(temp3)
+                            sd4.append(temp4)
+
+                            com.append(pd.DataFrame({'Name': sd1[-1], 'Type': sd2[-1], 'Count': sd3[-1], 'Amount': sd4[-1]}))
+
+                            if 'hoverDataList' not in data['data'] and not isinstance(data['data']['hoverDataList'], list):
+                                com.append(pd.DataFrame(columns=['Name','Type', 'Count', 'Amount']))
 
 
 
-            for i in range(len(cum_count)):
-                cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
+                uni_name = com[0]['Name'].unique()
 
-            for i in range(len(cum_count)):
-                st.write(f'Comparing the Registered Users count of {uni_name[i]} Yearwise:')
-                fig = plt.figure(figsize=(10, 4))
-                sns.barplot(x=0,y=1,data=cnt[i])
-                plt.ylabel('Registered Users')
-                plt.xlabel('Year')
-                plt.title(f'Comparing the Registered Users count of {uni_name[i]} Yearwise:') 
-                plt.plot(cnt[i][0], cnt[i][1], color='blue', marker='o')
-                st.pyplot(fig)
-
-
-            yw=[]
-            yrs=['2018','2019','2020','2021','2022']
-            for i in yrs:
-                tent1=[]
-                for j in range(len(cnt)):
-                    tent=[]
-                    for s in range(len(cnt[j][0])):
-                        if i == cnt[j][0][s]:
-                            tent= cnt[j][1][s]
-                    tent1.append(tent)
-                yw.append(tent1)
+                cum_count=[]
+                for i in uni_name:
+                    tem2 = []
+                    for j in range(0,len(com),4):
+                        tem1 = 0
+                        for k in range(4):
+                            for s in range(len(uni_name)):
+                                if i == com[j+k]['Name'][s]:
+                                    tem1+= com[j+k]['Count'][s]
+                        tem2.append(tem1/4)
+                    cum_count.append(tem2)
 
 
-            yy=[]
-            for i in range(len(yw)):
-                yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+
+                for i in range(len(cum_count)):
+                    cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
+                
+
+                for i in range(len(cum_count)):
+                    st.write(f'Comparing the count of {uni_name[i]} Yearwise:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=cnt[i])
+                    plt.ylabel('Count')
+                    plt.xlabel('Year')
+                    plt.title(f'Comparing the count of {uni_name[i]} Yearwise:') 
+                    plt.plot(cnt[i][0], cnt[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
 
 
-            for i in range(len(yw)):
-                st.write(f'Comparing the Registered Users Count for the {yrs[i]}:')
-                fig = plt.figure(figsize=(10, 4))
-                sns.barplot(x=0,y=1,data=yy[i])
-                plt.ylabel('User Count')
-                plt.xlabel('Name')
-                plt.xticks(rotation=90)
-                plt.title(f'Comparing the Registered Users Count for the {yrs[i]}:') 
-                plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
-                st.pyplot(fig)
-
-        if am == 'top' and tu=='transaction':
-            com1=[]
-            com2=[]
-            com3=[]
-            for i in yr:
-                base_path1 = os.path.join(base_path, f'{i}')
-
-                sd1=[]
-                sd2=[]
-                sd3=[]
-                sd4=[]
-                sd5=[]
-                sd6=[]
-                sd7=[]
-                sd8=[]
-                sd9=[]
-                sd10=[]
-                sd11=[]
-                sd12=[]
+                cum_amt=[]
+                for i in uni_name:
+                    tem2 = []
+                    for j in range(0,len(com),4):
+                        tem1 = 0
+                        for k in range(4):
+                            for s in range(len(uni_name)):
+                                if i == com[j+k]['Name'][s]:
+                                    tem1+= com[j+k]['Amount'][s]
+                        tem2.append(tem1/4)
+                    cum_amt.append(tem2)
 
 
-                qt = ['1','2','3','4']
-                for j in qt:
+                for i in range(len(cum_amt)):
+                    amt.append(pd.DataFrame(list(zip(yr,cum_amt[i]))))
 
-                    base_path2 = os.path.join(base_path1, f'{j}.json')
+                for i in range(len(cum_amt)):
+                    st.write(f'Comparing the Amount of {uni_name[i]} Yearwise:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=amt[i])
+                    plt.ylabel('Amount')
+                    plt.xlabel('Year')
+                    plt.title(f'Comparing the Amount of {uni_name[i]} Yearwise:') 
+                    plt.plot(amt[i][0], amt[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
 
-                    with open(base_path2, 'r') as file:
-                        data = file.read()
-                        # Parse the JSON data
-                        data = json.loads(data)
+                yw=[]
+                yrs=['2018','2019','2020','2021','2022']
+                for i in yrs:
+                    tent1=[]
+                    for j in range(len(cnt)):
+                        tent=[]
+                        for s in range(len(cnt[j][0])):
+                            if i == cnt[j][0][s]:
+                                tent= cnt[j][1][s]
+                        tent1.append(tent)
+                    yw.append(tent1)
+
+
+                yy=[]
+                for i in range(len(yw)):
+                    yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+
+                for i in range(len(yw)):
+                    st.write(f'Comparing the Label for the {yrs[i]}:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=yy[i])
+                    plt.ylabel('Count')
+                    plt.xlabel('District')
+                    plt.xticks(rotation=90)
+                    plt.title(f'Comparing the Label for the {yrs[i]}:') 
+                    plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+                yw=[]
+                yrs=['2018','2019','2020','2021','2022']
+                for i in yrs:
+                    tent1=[]
+                    for j in range(len(amt)):
+                        tent=[]
+                        for s in range(len(amt[j][0])):
+                            if i == amt[j][0][s]:
+                                tent= amt[j][1][s]
+                        tent1.append(tent)
+                    yw.append(tent1)
+
+
+                yy=[]
+                for i in range(len(yw)):
+                    yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+
+                for i in range(len(yw)):
+                    st.write(f'Comparing the Amount for the {yrs[i]}:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=yy[i])
+                    plt.ylabel('Amount')
+                    plt.xlabel('Label')
+                    plt.xticks(rotation=90)
+                    plt.title(f'Comparing the Amount for the {yrs[i]}:') 
+                    plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+
+
+
+            if am == 'map' and tu=='user':
+                for i in yr:
+                    base_path1 = os.path.join(sbase_path, f'{i}')
+
+                    sd1=[]
+                    sd2=[]
+                    sd3=[]
+                    sd4=[]
+
+
+                    qt = ['1','2','3','4']
+                    for j in qt:
+
+                        base_path2 = os.path.join(base_path1, f'{j}.json')
+
+                        with open(base_path2, 'r') as file:
+                            data = file.read()
+                            # Parse the JSON data
+                            data = json.loads(data)
+
+                            temp1=[]
+                            temp2=[]
+
+                            if 'hoverData' in data['data'] :
+                                # Iterate over the transaction data and extract relevant details
+                                for j in range(len(data['data']['hoverData'])):
+                                    temp1.append(list(data['data']['hoverData'].keys())[j])
+                                    temp2.append(list(data['data']['hoverData'].values())[j]['registeredUsers'])
+                                    
+                            sd1.append(temp1)
+                            sd2.append(temp2)
+
+                            com.append(pd.DataFrame({'Name': sd1[-1], 'Registered Users': sd2[-1]}))
                         
-                        temp5=[]
-                        temp6=[]
-                        temp7=[]
-                        temp8=[]
 
-                        if 'districts' in data['data'] and isinstance(data['data']['districts'], list):                    
-                            for j in range(len(data['data']['districts'])):
-                                temp5.append(data['data']['districts'][j]['entityName'])
-                                temp6.append(data['data']['districts'][j]['metric']['type'])
-                                temp7.append(data['data']['districts'][j]['metric']['count'])
-                                temp8.append(data['data']['districts'][j]['metric']['amount'])      
-                        
-                        sd5.append(temp5)
-                        sd6.append(temp6)
-                        sd7.append(temp7)
-                        sd8.append(temp8)     
+                            if 'hoverData' not in data['data'] :
+                                com.append(pd.DataFrame(columns=['Name','Registered Users']))
 
-                        com2.append(pd.DataFrame({'District Name': sd5[-1], 'Type': sd6[-1], 'Count': sd7[-1], 'Amount': sd8[-1]}))
+                uni_name = com[0]['Name'].unique()
 
-                        if 'states' not in data['data'] and not isinstance(data['data']['states'], list):
-                            com2.append(pd.DataFrame(columns=['District Name','Type', 'Count', 'Amount']))
+                cum_count=[]
 
-                        temp9=[]
-                        temp10=[]
-                        temp11=[]
-                        temp12=[]
-
-                        if 'pincodes' in data['data'] and isinstance(data['data']['pincodes'], list):                    
-                            for j in range(len(data['data']['pincodes'])):
-                                temp9.append(data['data']['pincodes'][j]['entityName'])
-                                temp10.append(data['data']['pincodes'][j]['metric']['type'])
-                                temp11.append(data['data']['pincodes'][j]['metric']['count'])
-                                temp12.append(data['data']['pincodes'][j]['metric']['amount'])      
-
-                        sd9.append(temp9)
-                        sd10.append(temp10)
-                        sd11.append(temp11)
-                        sd12.append(temp12)                
-
-                        com3.append(pd.DataFrame({'Pincode': sd9[-1], 'Type': sd10[-1], 'Count': sd11[-1], 'Amount': sd12[-1]}))
-
-                        if 'pincodes' not in data['data'] and not isinstance(data['data']['pincodes'], list):
-                            com3.append(pd.DataFrame(columns=['Pincode','Type', 'Count', 'Amount']))
-
-
-            uni_name = com2[0]['District Name'].unique()
-
-            cum_count=[]
-            for i in uni_name:
-                tem2 = []
-                for j in range(0,len(com2),4):
-                    tem1 = 0
-                    for k in range(4):
-                        for s in range(len(uni_name)):
-                            if i == com2[j+k]['District Name'][s]:
-                                tem1+= com2[j+k]['Count'][s]
-                    tem2.append(tem1/4)
-                cum_count.append(tem2)
-
-            for i in range(len(cum_count)):
-                cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
-
-
-            for i in range(len(cum_count)):
-                st.write(f'Comparing the count of {uni_name[i]} District Yearwise:')
-                fig = plt.figure(figsize=(10, 4))
-                sns.barplot(x=0,y=1,data=cnt[i])
-                plt.ylabel('Count')
-                plt.xlabel('Year')
-                plt.title(f'Comparing the count of {uni_name[i]} District Yearwise:') 
-                plt.plot(cnt[i][0], cnt[i][1], color='blue', marker='o')
-                st.pyplot(fig)
-
-
-            cum_amt=[]
-            for i in uni_name:
-                tem2 = []
-                for j in range(0,len(com2),4):
-                    tem1 = 0
-                    for k in range(4):
-                        for s in range(len(uni_name)):
-                            if i == com2[j+k]['District Name'][s]:
-                                tem1+= com2[j+k]['Amount'][s]
-                    tem2.append(tem1/4)
-                cum_amt.append(tem2)
+                for i in uni_name:
+                    tem2 = []
+                    for j in range(0,len(com),4):
+                        tem1 = 0
+                        for k in range(4):
+                            for s in range(len(uni_name)):
+                                if i == com[j+k]['Name'][s]:
+                                    tem1+= com[j+k]['Registered Users'][s]
+                        tem2.append(tem1/4)
+                    cum_count.append(tem2)
 
 
 
-            for i in range(len(cum_amt)):
-                amt.append(pd.DataFrame(list(zip(yr,cum_amt[i]))))
+                for i in range(len(cum_count)):
+                    cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
 
-            for i in range(len(cum_amt)):
-                st.write(f'Comparing the Amount of {uni_name[i]} District Yearwise:')
-                fig = plt.figure(figsize=(10, 4))
-                sns.barplot(x=0,y=1,data=amt[i])
-                plt.ylabel('Amount')
-                plt.xlabel('Year')
-                plt.title(f'Comparing the Amount of {uni_name[i]} District Yearwise:') 
-                plt.plot(amt[i][0], amt[i][1], color='blue', marker='o')
-                st.pyplot(fig)
-
-
-            yw=[]
-            yrs=['2018','2019','2020','2021','2022']
-            for i in yrs:
-                tent1=[]
-                for j in range(len(cnt)):
-                    tent=[]
-                    for s in range(len(cnt[j][0])):
-                        if i == cnt[j][0][s]:
-                            tent= cnt[j][1][s]
-                    tent1.append(tent)
-                yw.append(tent1)
+                for i in range(len(cum_count)):
+                    st.write(f'Comparing the Registered Users count of {uni_name[i]} Yearwise:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=cnt[i])
+                    plt.ylabel('Registered Users')
+                    plt.xlabel('Year')
+                    plt.title(f'Comparing the Registered Users count of {uni_name[i]} Yearwise:') 
+                    plt.plot(cnt[i][0], cnt[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
 
 
-            yy=[]
-            for i in range(len(yw)):
-                yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+                yw=[]
+                yrs=['2018','2019','2020','2021','2022']
+                for i in yrs:
+                    tent1=[]
+                    for j in range(len(cnt)):
+                        tent=[]
+                        for s in range(len(cnt[j][0])):
+                            if i == cnt[j][0][s]:
+                                tent= cnt[j][1][s]
+                        tent1.append(tent)
+                    yw.append(tent1)
 
 
-            for i in range(len(yw)):
-                st.write(f'Comparing the District Count for the {yrs[i]}:')
-                fig = plt.figure(figsize=(10, 4))
-                sns.barplot(x=0,y=1,data=yy[i])
-                plt.ylabel('Count')
-                plt.xlabel('District Name')
-                plt.xticks(rotation=90)
-                plt.title(f'Comparing the District Count for the {yrs[i]}:') 
-                plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
-                st.pyplot(fig)
-
-            yw=[]
-            yrs=['2018','2019','2020','2021','2022']
-            for i in yrs:
-                tent1=[]
-                for j in range(len(amt)):
-                    tent=[]
-                    for s in range(len(amt[j][0])):
-                        if i == amt[j][0][s]:
-                            tent= amt[j][1][s]
-                    tent1.append(tent)
-                yw.append(tent1)
+                yy=[]
+                for i in range(len(yw)):
+                    yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
 
 
-            yy=[]
-            for i in range(len(yw)):
-                yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+                for i in range(len(yw)):
+                    st.write(f'Comparing the Registered Users Count for the {yrs[i]}:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=yy[i])
+                    plt.ylabel('User Count')
+                    plt.xlabel('Name')
+                    plt.xticks(rotation=90)
+                    plt.title(f'Comparing the Registered Users Count for the {yrs[i]}:') 
+                    plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+            if am == 'top' and tu=='transaction':
+                com1=[]
+                com2=[]
+                com3=[]
+                for i in yr:
+                    base_path1 = os.path.join(base_path, f'{i}')
+
+                    sd1=[]
+                    sd2=[]
+                    sd3=[]
+                    sd4=[]
+                    sd5=[]
+                    sd6=[]
+                    sd7=[]
+                    sd8=[]
+                    sd9=[]
+                    sd10=[]
+                    sd11=[]
+                    sd12=[]
 
 
-            for i in range(len(yw)):
-                st.write(f'Comparing the District Amount for the {yrs[i]}:')
-                fig = plt.figure(figsize=(10, 4))
-                sns.barplot(x=0,y=1,data=yy[i])
-                plt.ylabel('Amount')
-                plt.xlabel('District Name')
-                plt.xticks(rotation=90)
-                plt.title(f'Comparing the District Amount for the {yrs[i]}:') 
-                plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
-                st.pyplot(fig)
+                    qt = ['1','2','3','4']
+                    for j in qt:
 
+                        base_path2 = os.path.join(base_path1, f'{j}.json')
 
+                        with open(base_path2, 'r') as file:
+                            data = file.read()
+                            # Parse the JSON data
+                            data = json.loads(data)
 
-            uni_name = com3[0]['Pincode'].unique()
+                            temp1=[]
+                            temp2=[]
+                            temp3=[]
+                            temp4=[]
 
-            cum_count=[]
-            for i in uni_name:
-                tem2 = []
-                for j in range(0,len(com3),4):
-                    tem1 = 0
-                    for k in range(4):
-                        for s in range(len(uni_name)):
-                            if i == com3[j+k]['Pincode'][s]:
-                                tem1+= com3[j+k]['Count'][s]
-                    tem2.append(tem1/4)
-                cum_count.append(tem2)
+                            if 'states' in data['data'] and isinstance(data['data']['states'], list):
+                                # Iterate over the transaction data and extract relevant details
+                                for j in range(len(data['data']['states'])):
+                                    temp1.append(data['data']['states'][j]['entityName'])
+                                    temp2.append(data['data']['states'][j]['metric']['type'])
+                                    temp3.append(data['data']['states'][j]['metric']['count'])
+                                    temp4.append(data['data']['states'][j]['metric']['amount'])
+                                    
+                            sd1.append(temp1)
+                            sd2.append(temp2)
+                            sd3.append(temp3)
+                            sd4.append(temp4)
 
+                            com1.append(pd.DataFrame({'State Name': sd1[-1], 'Type': sd2[-1], 'Count': sd3[-1], 'Amount': sd4[-1]}))
 
-            for i in range(len(cum_count)):
-                cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
-        
-
-
-            for i in range(len(cum_count)):
-                st.write(f'Comparing the count of {uni_name[i]} PinCode Yearwise:')
-                fig = plt.figure(figsize=(10, 4))
-                sns.barplot(x=0,y=1,data=cnt[i])
-                plt.ylabel('Count')
-                plt.xlabel('Year')
-                plt.title(f'Comparing the count of {uni_name[i]} PinCode Yearwise:') 
-                plt.plot(cnt[i][0], cnt[i][1], color='blue', marker='o')
-                st.pyplot(fig)
-
-
-            cum_amt=[]
-            for i in uni_name:
-                tem2 = []
-                for j in range(0,len(com3),4):
-                    tem1 = 0
-                    for k in range(4):
-                        for s in range(len(uni_name)):
-                            if i == com3[j+k]['Pincode'][s]:
-                                tem1+= com3[j+k]['Amount'][s]
-                    tem2.append(tem1/4)
-                cum_amt.append(tem2)
-
-
-            for i in range(len(cum_amt)):
-                amt.append(pd.DataFrame(list(zip(yr,cum_amt[i]))))
-
-            for i in range(len(cum_amt)):
-                st.write(f'Comparing the Amount of {uni_name[i]} PinCode Yearwise:')
-                fig = plt.figure(figsize=(10, 4))
-                sns.barplot(x=0,y=1,data=amt[i])
-                plt.ylabel('Amount')
-                plt.xlabel('Year')
-                plt.title(f'Comparing the Amount of {uni_name[i]} PinCode Yearwise:') 
-                plt.plot(amt[i][0], amt[i][1], color='blue', marker='o')
-                st.pyplot(fig)
-
-
-            yw=[]
-            yrs=['2018','2019','2020','2021','2022']
-            for i in yrs:
-                tent1=[]
-                for j in range(len(cnt)):
-                    tent=[]
-                    for s in range(len(cnt[j][0])):
-                        if i == cnt[j][0][s]:
-                            tent= cnt[j][1][s]
-                    tent1.append(tent)
-                yw.append(tent1)
-
-
-            yy=[]
-            for i in range(len(yw)):
-                yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
-
-            for i in range(len(yw)):
-                st.write(f'Comparing the PinCode Count for the {yrs[i]}:')
-                fig = plt.figure(figsize=(10, 4))
-                sns.barplot(x=0,y=1,data=yy[i])
-                plt.ylabel('Count')
-                plt.xlabel('Pincode')
-                plt.xticks(rotation=90)
-                plt.title(f'Comparing the PinCode Count for the {yrs[i]}:') 
-                plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
-                st.pyplot(fig)
-
-            yw=[]
-            yrs=['2018','2019','2020','2021','2022']
-            for i in yrs:
-                tent1=[]
-                for j in range(len(amt)):
-                    tent=[]
-                    for s in range(len(amt[j][0])):
-                        if i == amt[j][0][s]:
-                            tent= amt[j][1][s]
-                    tent1.append(tent)
-                yw.append(tent1)
-
-
-            yy=[]
-            for i in range(len(yw)):
-                yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
-
-
-            for i in range(len(yw)):
-                st.write(f'Comparing the PinCode Amount for the {yrs[i]}:')
-                fig = plt.figure(figsize=(10, 4))
-                sns.barplot(x=0,y=1,data=yy[i])
-                plt.ylabel('Amount')
-                plt.xlabel('Pincode')
-                plt.xticks(rotation=90)
-                plt.title(f'Comparing the PinCode Amount for the {yrs[i]}:') 
-                plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
-                st.pyplot(fig)
-
-
-        if am == 'top' and tu=='user':
-            com1=[]
-            com2=[]
-            com3=[]
-            for i in yr:
-                base_path1 = os.path.join(base_path, f'{i}')
-
-                sd1=[]
-                sd2=[]
-                sd3=[]
-                sd4=[]
-                sd5=[]
-                sd6=[]
-
-
-                qt = ['1','2','3','4']
-                for j in qt:
-
-                    base_path2 = os.path.join(base_path1, f'{j}.json')
-
-                    with open(base_path2, 'r') as file:
-                        data = file.read()
-                        # Parse the JSON data
-                        data = json.loads(data)
-
-                        temp1=[]
-                        temp2=[]
-
-                        if 'states' in data['data'] and isinstance(data['data']['states'], list): 
-                            # Iterate over the transaction data and extract relevant details
-                            for j in range(len(data['data']['states'])):
-                                temp1.append(data['data']['states'][j]['name'])
-                                temp2.append(data['data']['states'][j]['registeredUsers'])
+                            if 'states' not in data['data'] and not isinstance(data['data']['states'], list):
+                                com1.append(pd.DataFrame(columns=['State Name','Type', 'Count', 'Amount']))
                             
-                        sd1.append(temp1)
-                        sd2.append(temp2)
+                            temp5=[]
+                            temp6=[]
+                            temp7=[]
+                            temp8=[]
 
-                        com1.append(pd.DataFrame({'State Name': sd1[-1], 'Registered Users': sd2[-1]}))
+                            if 'districts' in data['data'] and isinstance(data['data']['districts'], list):                    
+                                for j in range(len(data['data']['districts'])):
+                                    temp5.append(data['data']['districts'][j]['entityName'])
+                                    temp6.append(data['data']['districts'][j]['metric']['type'])
+                                    temp7.append(data['data']['districts'][j]['metric']['count'])
+                                    temp8.append(data['data']['districts'][j]['metric']['amount'])      
+                            
+                            sd5.append(temp5)
+                            sd6.append(temp6)
+                            sd7.append(temp7)
+                            sd8.append(temp8)     
 
-                        if 'states' not in data['data'] and not isinstance(data['data']['states'], list):
-                            com1.append(pd.DataFrame(columns=['State Name','Registered Users']))
-                        
-                        
-                        temp3=[]
-                        temp4=[]
+                            com2.append(pd.DataFrame({'District Name': sd5[-1], 'Type': sd6[-1], 'Count': sd7[-1], 'Amount': sd8[-1]}))
 
-                        if 'districts' in data['data'] and isinstance(data['data']['districts'], list):
-                            for j in range(len(data['data']['districts'])):
-                                temp3.append(data['data']['districts'][j]['name'])
-                                temp4.append(data['data']['districts'][j]['registeredUsers'])    
-                        
-                        sd3.append(temp3)
-                        sd4.append(temp4)
+                            if 'states' not in data['data'] and not isinstance(data['data']['states'], list):
+                                com2.append(pd.DataFrame(columns=['District Name','Type', 'Count', 'Amount']))
 
-                        com2.append(pd.DataFrame({'District Name': sd3[-1], 'Registered Users': sd4[-1]}))
+                            temp9=[]
+                            temp10=[]
+                            temp11=[]
+                            temp12=[]
 
-                        if 'districts' not in data['data'] and not isinstance(data['data']['districts'], list):
-                            com2.append(pd.DataFrame(columns=['District Name','Registered Users']))
+                            if 'pincodes' in data['data'] and isinstance(data['data']['pincodes'], list):                    
+                                for j in range(len(data['data']['pincodes'])):
+                                    temp9.append(data['data']['pincodes'][j]['entityName'])
+                                    temp10.append(data['data']['pincodes'][j]['metric']['type'])
+                                    temp11.append(data['data']['pincodes'][j]['metric']['count'])
+                                    temp12.append(data['data']['pincodes'][j]['metric']['amount'])      
 
-                        temp5=[]
-                        temp6=[]
+                            sd9.append(temp9)
+                            sd10.append(temp10)
+                            sd11.append(temp11)
+                            sd12.append(temp12)                
 
-                        if 'pincodes' in data['data'] and isinstance(data['data']['pincodes'], list):
-                            for j in range(len(data['data']['pincodes'])):
-                                temp5.append(data['data']['pincodes'][j]['name'])
-                                temp6.append(data['data']['pincodes'][j]['registeredUsers'])     
-                        
-                        sd5.append(temp5)
-                        sd6.append(temp6)
+                            com3.append(pd.DataFrame({'Pincode': sd9[-1], 'Type': sd10[-1], 'Count': sd11[-1], 'Amount': sd12[-1]}))
 
-                        com3.append(pd.DataFrame({'Pincode': sd5[-1], 'Registered Users': sd6[-1]}))
+                            if 'pincodes' not in data['data'] and not isinstance(data['data']['pincodes'], list):
+                                com3.append(pd.DataFrame(columns=['Pincode','Type', 'Count', 'Amount']))
 
-                        if 'districts' not in data['data'] and not isinstance(data['data']['districts'], list):
-                            com3.append(pd.DataFrame(columns=['Pincode','Registered Users']))  
+                uni_name = com2[0]['District Name'].unique()
 
-            uni_name = com2[0]['District Name'].unique()
+                cum_count=[]
+                for i in uni_name:
+                    tem2 = []
+                    for j in range(0,len(com2),4):
+                        tem1 = 0
+                        for k in range(4):
+                            for s in range(len(uni_name)):
+                                if i == com2[j+k]['District Name'][s]:
+                                    tem1+= com2[j+k]['Count'][s]
+                        tem2.append(tem1/4)
+                    cum_count.append(tem2)
 
-            cum_count=[]
-            for i in uni_name:
-                tem2 = []
-                for j in range(0,len(com2),4):
-                    tem1 = 0
-                    for k in range(4):
-                        for s in range(len(uni_name)):
-                            if i == com2[j+k]['District Name'][s]:
-                                tem1+= com2[j+k]['Registered Users'][s]
-                    tem2.append(tem1/4)
-                cum_count.append(tem2)
+                for i in range(len(cum_count)):
+                    cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
 
 
+                for i in range(len(cum_count)):
+                    st.write(f'Comparing the count of {uni_name[i]} District Yearwise:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=cnt[i])
+                    plt.ylabel('Count')
+                    plt.xlabel('Year')
+                    plt.title(f'Comparing the count of {uni_name[i]} District Yearwise:') 
+                    plt.plot(cnt[i][0], cnt[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
 
 
-            for i in range(len(cum_count)):
-                cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
+                cum_amt=[]
+                for i in uni_name:
+                    tem2 = []
+                    for j in range(0,len(com2),4):
+                        tem1 = 0
+                        for k in range(4):
+                            for s in range(len(uni_name)):
+                                if i == com2[j+k]['District Name'][s]:
+                                    tem1+= com2[j+k]['Amount'][s]
+                        tem2.append(tem1/4)
+                    cum_amt.append(tem2)
+
+
+
+                for i in range(len(cum_amt)):
+                    amt.append(pd.DataFrame(list(zip(yr,cum_amt[i]))))
+
+                for i in range(len(cum_amt)):
+                    st.write(f'Comparing the Amount of {uni_name[i]} District Yearwise:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=amt[i])
+                    plt.ylabel('Amount')
+                    plt.xlabel('Year')
+                    plt.title(f'Comparing the Amount of {uni_name[i]} District Yearwise:') 
+                    plt.plot(amt[i][0], amt[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+
+                yw=[]
+                yrs=['2018','2019','2020','2021','2022']
+                for i in yrs:
+                    tent1=[]
+                    for j in range(len(cnt)):
+                        tent=[]
+                        for s in range(len(cnt[j][0])):
+                            if i == cnt[j][0][s]:
+                                tent= cnt[j][1][s]
+                        tent1.append(tent)
+                    yw.append(tent1)
+
+
+                yy=[]
+                for i in range(len(yw)):
+                    yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+
+
+                for i in range(len(yw)):
+                    st.write(f'Comparing the District Count for the {yrs[i]}:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=yy[i])
+                    plt.ylabel('Count')
+                    plt.xlabel('District Name')
+                    plt.xticks(rotation=90)
+                    plt.title(f'Comparing the District Count for the {yrs[i]}:') 
+                    plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+                yw=[]
+                yrs=['2018','2019','2020','2021','2022']
+                for i in yrs:
+                    tent1=[]
+                    for j in range(len(amt)):
+                        tent=[]
+                        for s in range(len(amt[j][0])):
+                            if i == amt[j][0][s]:
+                                tent= amt[j][1][s]
+                        tent1.append(tent)
+                    yw.append(tent1)
+
+
+                yy=[]
+                for i in range(len(yw)):
+                    yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+
+
+                for i in range(len(yw)):
+                    st.write(f'Comparing the District Amount for the {yrs[i]}:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=yy[i])
+                    plt.ylabel('Amount')
+                    plt.xlabel('District Name')
+                    plt.xticks(rotation=90)
+                    plt.title(f'Comparing the District Amount for the {yrs[i]}:') 
+                    plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+
+
+                uni_name = com3[0]['Pincode'].unique()
+
+                cum_count=[]
+                for i in uni_name:
+                    tem2 = []
+                    for j in range(0,len(com3),4):
+                        tem1 = 0
+                        for k in range(4):
+                            for s in range(len(uni_name)):
+                                if i == com3[j+k]['Pincode'][s]:
+                                    tem1+= com3[j+k]['Count'][s]
+                        tem2.append(tem1/4)
+                    cum_count.append(tem2)
+
+
+                for i in range(len(cum_count)):
+                    cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
             
 
 
-
-            for i in range(len(cum_count)):
-                st.write(f'Comparing the Registered Users of {uni_name[i]} District Yearwise:')
-                fig = plt.figure(figsize=(10, 4))
-                sns.barplot(x=0,y=1,data=cnt[i])
-                plt.ylabel('Registered Users')
-                plt.xlabel('Year')
-                plt.title(f'Comparing the Registered Users of {uni_name[i]} District Yearwise:') 
-                plt.plot(cnt[i][0], cnt[i][1], color='blue', marker='o')
-                st.pyplot(fig)
-
-
-            yw=[]
-            yrs=['2018','2019','2020','2021','2022']
-            for i in yrs:
-                tent1=[]
-                for j in range(len(cnt)):
-                    tent=[]
-                    for s in range(len(cnt[j][0])):
-                        if i == cnt[j][0][s]:
-                            tent= cnt[j][1][s]
-                    tent1.append(tent)
-                yw.append(tent1)
+                for i in range(len(cum_count)):
+                    st.write(f'Comparing the count of {uni_name[i]} PinCode Yearwise:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=cnt[i])
+                    plt.ylabel('Count')
+                    plt.xlabel('Year')
+                    plt.title(f'Comparing the count of {uni_name[i]} PinCode Yearwise:') 
+                    plt.plot(cnt[i][0], cnt[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
 
 
-            yy=[]
-            for i in range(len(yw)):
-                yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+                cum_amt=[]
+                for i in uni_name:
+                    tem2 = []
+                    for j in range(0,len(com3),4):
+                        tem1 = 0
+                        for k in range(4):
+                            for s in range(len(uni_name)):
+                                if i == com3[j+k]['Pincode'][s]:
+                                    tem1+= com3[j+k]['Amount'][s]
+                        tem2.append(tem1/4)
+                    cum_amt.append(tem2)
 
 
-            for i in range(len(yw)):
-                st.write(f'Comparing the District Count for the {yrs[i]}:')
-                fig = plt.figure(figsize=(10, 4))
-                sns.barplot(x=0,y=1,data=yy[i])
-                plt.ylabel('Registered Users')
-                plt.xlabel('District Name')
-                plt.xticks(rotation=90)
-                plt.title(f'Comparing the District Count for the {yrs[i]}:') 
-                plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
-                st.pyplot(fig)
+                for i in range(len(cum_amt)):
+                    amt.append(pd.DataFrame(list(zip(yr,cum_amt[i]))))
+
+                for i in range(len(cum_amt)):
+                    st.write(f'Comparing the Amount of {uni_name[i]} PinCode Yearwise:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=amt[i])
+                    plt.ylabel('Amount')
+                    plt.xlabel('Year')
+                    plt.title(f'Comparing the Amount of {uni_name[i]} PinCode Yearwise:') 
+                    plt.plot(amt[i][0], amt[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+
+                yw=[]
+                yrs=['2018','2019','2020','2021','2022']
+                for i in yrs:
+                    tent1=[]
+                    for j in range(len(cnt)):
+                        tent=[]
+                        for s in range(len(cnt[j][0])):
+                            if i == cnt[j][0][s]:
+                                tent= cnt[j][1][s]
+                        tent1.append(tent)
+                    yw.append(tent1)
+
+
+                yy=[]
+                for i in range(len(yw)):
+                    yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+
+                for i in range(len(yw)):
+                    st.write(f'Comparing the PinCode Count for the {yrs[i]}:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=yy[i])
+                    plt.ylabel('Count')
+                    plt.xlabel('Pincode')
+                    plt.xticks(rotation=90)
+                    plt.title(f'Comparing the PinCode Count for the {yrs[i]}:') 
+                    plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+                yw=[]
+                yrs=['2018','2019','2020','2021','2022']
+                for i in yrs:
+                    tent1=[]
+                    for j in range(len(amt)):
+                        tent=[]
+                        for s in range(len(amt[j][0])):
+                            if i == amt[j][0][s]:
+                                tent= amt[j][1][s]
+                        tent1.append(tent)
+                    yw.append(tent1)
+
+
+                yy=[]
+                for i in range(len(yw)):
+                    yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+
+
+                for i in range(len(yw)):
+                    st.write(f'Comparing the PinCode Amount for the {yrs[i]}:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=yy[i])
+                    plt.ylabel('Amount')
+                    plt.xlabel('Pincode')
+                    plt.xticks(rotation=90)
+                    plt.title(f'Comparing the PinCode Amount for the {yrs[i]}:') 
+                    plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+            if am == 'top' and tu=='user':
+                com1=[]
+                com2=[]
+                com3=[]
+                for i in yr:
+                    base_path1 = os.path.join(base_path, f'{i}')
+
+                    sd1=[]
+                    sd2=[]
+                    sd3=[]
+                    sd4=[]
+                    sd5=[]
+                    sd6=[]
+
+
+                    qt = ['1','2','3','4']
+                    for j in qt:
+
+                        base_path2 = os.path.join(base_path1, f'{j}.json')
+
+                        with open(base_path2, 'r') as file:
+                            data = file.read()
+                            # Parse the JSON data
+                            data = json.loads(data)
+                            
+                            
+                            temp3=[]
+                            temp4=[]
+
+                            if 'districts' in data['data'] and isinstance(data['data']['districts'], list):
+                                for j in range(len(data['data']['districts'])):
+                                    temp3.append(data['data']['districts'][j]['name'])
+                                    temp4.append(data['data']['districts'][j]['registeredUsers'])    
+                            
+                            sd3.append(temp3)
+                            sd4.append(temp4)
+
+                            com2.append(pd.DataFrame({'District Name': sd3[-1], 'Registered Users': sd4[-1]}))
+
+                            if 'districts' not in data['data'] and not isinstance(data['data']['districts'], list):
+                                com2.append(pd.DataFrame(columns=['District Name','Registered Users']))
+
+                            temp5=[]
+                            temp6=[]
+
+                            if 'pincodes' in data['data'] and isinstance(data['data']['pincodes'], list):
+                                for j in range(len(data['data']['pincodes'])):
+                                    temp5.append(data['data']['pincodes'][j]['name'])
+                                    temp6.append(data['data']['pincodes'][j]['registeredUsers'])     
+                            
+                            sd5.append(temp5)
+                            sd6.append(temp6)
+
+                            com3.append(pd.DataFrame({'Pincode': sd5[-1], 'Registered Users': sd6[-1]}))
+
+                            if 'districts' not in data['data'] and not isinstance(data['data']['districts'], list):
+                                com3.append(pd.DataFrame(columns=['Pincode','Registered Users']))                  
+                uni_name = com2[0]['District Name'].unique()
+
+                cum_count=[]
+                for i in uni_name:
+                    tem2 = []
+                    for j in range(0,len(com2),4):
+                        tem1 = 0
+                        for k in range(4):
+                            for s in range(len(uni_name)):
+                                if i == com2[j+k]['District Name'][s]:
+                                    tem1+= com2[j+k]['Registered Users'][s]
+                        tem2.append(tem1/4)
+                    cum_count.append(tem2)
 
 
 
 
-            uni_name = com3[0]['Pincode'].unique()
-
-            cum_count=[]
-            for i in uni_name:
-                tem2 = []
-                for j in range(0,len(com3),4):
-                    tem1 = 0
-                    for k in range(4):
-                        for s in range(len(uni_name)):
-                            if i == com3[j+k]['Pincode'][s]:
-                                tem1+= com3[j+k]['Registered Users'][s]
-                    tem2.append(tem1/4)
-                cum_count.append(tem2)
-
-
-            for i in range(len(cum_count)):
-                cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
+                for i in range(len(cum_count)):
+                    cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
+                
 
 
 
-            for i in range(len(cum_count)):
-                st.write(f'Comparing the Registered Users of {uni_name[i]} PinCode Yearwise:')
-                fig = plt.figure(figsize=(10, 4))
-                sns.barplot(x=0,y=1,data=cnt[i])
-                plt.ylabel('Registered Users')
-                plt.xlabel('Year')
-                plt.title(f'Comparing the Registered Users of {uni_name[i]} PinCode Yearwise:') 
-                plt.plot(cnt[i][0], cnt[i][1], color='blue', marker='o')
-                st.pyplot(fig)
+                for i in range(len(cum_count)):
+                    st.write(f'Comparing the Registered Users of {uni_name[i]} District Yearwise:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=cnt[i])
+                    plt.ylabel('Registered Users')
+                    plt.xlabel('Year')
+                    plt.title(f'Comparing the Registered Users of {uni_name[i]} District Yearwise:') 
+                    plt.plot(cnt[i][0], cnt[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
 
 
-            yw=[]
-            yrs=['2018','2019','2020','2021','2022']
-            for i in yrs:
-                tent1=[]
-                for j in range(len(cnt)):
-                    tent=[]
-                    for s in range(len(cnt[j][0])):
-                        if i == cnt[j][0][s]:
-                            tent= cnt[j][1][s]
-                    tent1.append(tent)
-                yw.append(tent1)
+                yw=[]
+                yrs=['2018','2019','2020','2021','2022']
+                for i in yrs:
+                    tent1=[]
+                    for j in range(len(cnt)):
+                        tent=[]
+                        for s in range(len(cnt[j][0])):
+                            if i == cnt[j][0][s]:
+                                tent= cnt[j][1][s]
+                        tent1.append(tent)
+                    yw.append(tent1)
 
 
-            yy=[]
-            for i in range(len(yw)):
-                yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+                yy=[]
+                for i in range(len(yw)):
+                    yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
 
-            for i in range(len(yw)):
-                st.write(f'Comparing the PinCode Count for the {yrs[i]}:')
-                fig = plt.figure(figsize=(10, 4))
-                sns.barplot(x=0,y=1,data=yy[i])
-                plt.ylabel('Registered Users')
-                plt.xlabel('Pincode')
-                plt.xticks(rotation=90)
-                plt.title(f'Comparing the PinCode Count for the {yrs[i]}:') 
-                plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
-                st.pyplot(fig)
+
+                for i in range(len(yw)):
+                    st.write(f'Comparing the District Count for the {yrs[i]}:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=yy[i])
+                    plt.ylabel('Registered Users')
+                    plt.xlabel('District Name')
+                    plt.xticks(rotation=90)
+                    plt.title(f'Comparing the District Count for the {yrs[i]}:') 
+                    plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+
+
+
+                uni_name = com3[0]['Pincode'].unique()
+
+                cum_count=[]
+                for i in uni_name:
+                    tem2 = []
+                    for j in range(0,len(com3),4):
+                        tem1 = 0
+                        for k in range(4):
+                            for s in range(len(uni_name)):
+                                if i == com3[j+k]['Pincode'][s]:
+                                    tem1+= com3[j+k]['Registered Users'][s]
+                        tem2.append(tem1/4)
+                    cum_count.append(tem2)
+
+
+                for i in range(len(cum_count)):
+                    cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
+
+
+
+                for i in range(len(cum_count)):
+                    st.write(f'Comparing the Registered Users of {uni_name[i]} PinCode Yearwise:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=cnt[i])
+                    plt.ylabel('Registered Users')
+                    plt.xlabel('Year')
+                    plt.title(f'Comparing the Registered Users of {uni_name[i]} PinCode Yearwise:') 
+                    plt.plot(cnt[i][0], cnt[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+
+                yw=[]
+                yrs=['2018','2019','2020','2021','2022']
+                for i in yrs:
+                    tent1=[]
+                    for j in range(len(cnt)):
+                        tent=[]
+                        for s in range(len(cnt[j][0])):
+                            if i == cnt[j][0][s]:
+                                tent= cnt[j][1][s]
+                        tent1.append(tent)
+                    yw.append(tent1)
+
+
+                yy=[]
+                for i in range(len(yw)):
+                    yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+
+                for i in range(len(yw)):
+                    st.write(f'Comparing the PinCode Count for the {yrs[i]}:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=yy[i])
+                    plt.ylabel('Registered Users')
+                    plt.xlabel('Pincode')
+                    plt.xticks(rotation=90)
+                    plt.title(f'Comparing the PinCode Count for the {yrs[i]}:') 
+                    plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+
+
+
+        if dec =='State':
+            base_path = os.path.join(local_dir, f'pulse/data/aggregated/transaction/country/india/state')
+            # Extract the folder name from the path
+            files_and_folders = os.listdir(base_path)
+
+            states_name = [f for f in files_and_folders if os.path.isdir(os.path.join(base_path, f))]
+
+            cf1 = st.selectbox('Select the State',states_name, key=kf)
+            kf+=1
+            base_path = os.path.join(local_dir, f'pulse/data/{am}/{tu}/country/india/state/{cf1}')
+            sbase_path = os.path.join(local_dir, f'pulse/data/{am}/{tu}/hover/country/india/state/{cf1}')
+            st.header(cf1,'Plots')
+            cnt=[]
+            amt=[]
+            com=[]
+            agg=[]
+            uc=[]
+            per=[]
+            yr=['2018','2019','2020','2021','2022'] 
+            if am == 'aggregated' and tu=='transaction':
+                for i in yr:
+                    base_path1 = os.path.join(base_path, f'{i}')
+
+                    sd1=[]
+                    sd2=[]
+                    sd3=[]
+                    sd4=[]
+
+
+                    qt = ['1','2','3','4']
+                    for j in qt:
+
+                        base_path2 = os.path.join(base_path1, f'{j}.json')
+
+                        with open(base_path2, 'r') as file:
+                            data = file.read()
+                            # Parse the JSON data
+                            data = json.loads(data)
+
+                            temp1=[]
+                            temp2=[]
+                            temp3=[]
+                            temp4=[]
+                            tn1 = []
+                            tn2 = []
+
+                            for k in range(len(data['data']['transactionData'])):
+                                temp1.append(data['data']['transactionData'][k].get('name',0))
+                                temp2.append(data['data']['transactionData'][k]['paymentInstruments'][0].get('type',''))
+                                temp3.append(data['data']['transactionData'][k]['paymentInstruments'][0].get('count',0))
+                                temp4.append(data['data']['transactionData'][k]['paymentInstruments'][0].get('amount',0))
+                                    
+                        sd1.append(temp1)
+                        sd2.append(temp2)
+                        sd3.append(temp3)
+                        sd4.append(temp4)
+
+
+                        com.append(pd.DataFrame({'Name': sd1[-1], 'Type': sd2[-1], 'Count': sd3[-1], 'Amount':sd4[-1]}))
+
+                        if 'transactionData' not in data['data'] and not isinstance(data['data']['transactionData'], list):
+                            com.append(pd.DataFrame(columns=['Name','Type', 'Count', 'Amount)']))
+                    
+    ##           for i in range(len(com)):
+    ##                st.write(com[i])
+
+                uni_name = com[0]['Name'].unique()
+    ##            st.write(uni_name)
+    #            cc = st.checkbox('Count Details')
+    #            if cc:
+                cum_count=[]
+                for i in uni_name:
+                    tem2 = []
+                    for j in range(0,len(com),4):
+                        tem1 = 0
+                        for k in range(4):
+                            for s in range(len(uni_name)):
+                                if i == com[j+k]['Name'][s]:
+                                    tem1+= com[j+k]['Count'][s]
+                        tem2.append(tem1/4)
+                    cum_count.append(tem2)
+
+
+    ##            st.write(cum_count)
+
+                for i in range(len(cum_count)):
+                    cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
+                
+    ##            st.write(cnt)
+
+
+                for i in range(len(cum_count)):
+                    st.write(f'Comparing the count of {uni_name[i]} Yearwise:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=cnt[i])
+                    plt.ylabel('Count')
+                    plt.xlabel('Year')
+                    plt.title(f'Comparing the count of {uni_name[i]} Yearwise:') 
+                    plt.plot(cnt[i][0], cnt[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+
+    #            cc1 = st.checkbox('Amount Details')
+    #            if cc1:
+                cum_amt=[]
+                for i in uni_name:
+                    tem2 = []
+                    for j in range(0,len(com),4):
+                        tem1 = 0
+                        for k in range(4):
+                            for s in range(len(uni_name)):
+                                if i == com[j+k]['Name'][s]:
+                                    tem1+= com[j+k]['Amount'][s]
+                        tem2.append(tem1/4)
+                    cum_amt.append(tem2)
+
+
+    ##            st.write(cum_count)
+
+                for i in range(len(cum_amt)):
+                    amt.append(pd.DataFrame(list(zip(yr,cum_amt[i]))))
+
+                for i in range(len(cum_amt)):
+                    st.write(f'Comparing the Amount of {uni_name[i]} Yearwise:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=amt[i])
+                    plt.ylabel('Amount')
+                    plt.xlabel('Year')
+                    plt.title(f'Comparing the Amount of {uni_name[i]} Yearwise:') 
+                    plt.plot(amt[i][0], amt[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+    #            st.write(cnt[4])
+
+    #            cc2 = st.checkbox('YearWise Details')
+    #            if cc2:
+                yw=[]
+                yrs=['2018','2019','2020','2021','2022']
+                for i in yrs:
+                    tent1=[]
+                    for j in range(len(cnt)):
+                        tent=[]
+                        for s in range(len(cnt[j][0])):
+                            if i == cnt[j][0][s]:
+                                tent= cnt[j][1][s]
+                        tent1.append(tent)
+                    yw.append(tent1)
+
+
+                yy=[]
+                for i in range(len(yw)):
+                    yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+
+    #            st.write(yy[0][1][0][0])
+
+                for i in range(len(yw)):
+                    st.write(f'Comparing the Count for the {yrs[i]}:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=yy[i])
+                    plt.ylabel('Count')
+                    plt.xlabel('Label')
+                    plt.title(f'Comparing the Amount of {uni_name[i]} Yearwise:') 
+                    plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+                yw=[]
+                yrs=['2018','2019','2020','2021','2022']
+                for i in yrs:
+                    tent1=[]
+                    for j in range(len(amt)):
+                        tent=[]
+                        for s in range(len(amt[j][0])):
+                            if i == amt[j][0][s]:
+                                tent= amt[j][1][s]
+                        tent1.append(tent)
+                    yw.append(tent1)
+
+
+                yy=[]
+                for i in range(len(yw)):
+                    yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+
+    #            st.write(yy[0][1][0][0])
+
+                for i in range(len(yw)):
+                    st.write(f'Comparing the Amount for the {yrs[i]}:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=yy[i])
+                    plt.ylabel('Amount')
+                    plt.xlabel('Label')
+                    plt.title(f'Comparing the Amount of {uni_name[i]} Yearwise:') 
+                    plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+
+
+            if am == 'aggregated' and tu=='user':
+                yr =  yr=['2018','2019','2020','2021']
+                for i in yr:
+                    base_path1 = os.path.join(base_path, f'{i}')
+
+                    sd1=[]
+                    sd2=[]
+                    sd3=[]
+                    sd4=[]
+
+
+                    qt = ['1','2','3','4']
+                    for j in qt:
+
+                        base_path2 = os.path.join(base_path1, f'{j}.json')
+
+                        with open(base_path2, 'r') as file:
+                            data = file.read()
+                            # Parse the JSON data
+                            data = json.loads(data)
+
+
+
+                        agg.append(data['data']['aggregated'].get('registeredUsers',0))
+
+                        temp1=[]
+                        temp2=[]
+                        temp3=[]
+
+                        if 'usersByDevice' in data['data'] and isinstance(data['data']['usersByDevice'], list):
+                            # Iterate over the transaction data and extract relevant details
+                            for j in range(len(data['data']['usersByDevice'])):
+                                temp1.append(data['data']['usersByDevice'][j].get('brand',''))
+                                temp2.append(data['data']['usersByDevice'][j].get('count',0))
+                                temp3.append(data['data']['usersByDevice'][j].get('percentage',0))
+                                    
+                        sd1.append(temp1)
+                        sd2.append(temp2)
+                        sd3.append(temp3)
+
+                        com.append(pd.DataFrame({'Brand': sd1[-1], 'User Count': sd2[-1], 'Percentage(%)': sd3[-1]}))
+
+                        if 'usersByDevice' not in data['data'] and not isinstance(data['data']['usersByDevice'], list):
+                            com.append(pd.DataFrame(columns=['Brand', 'User Count', 'Percentage(%)']))
+
+
+    #            for i in range(len(com)):
+    #                st.write(com[i])
+
+                uni_name = com[0]['Brand'].unique()
+
+                cum_count=[]
+
+                for i in uni_name:
+                    tem2 = []
+                    for j in range(0,len(com),4):
+                        tem1 = 0
+                        for k in range(4):
+                            for s in range(len(uni_name)):
+                                if i == com[j+k]['Brand'][s]:
+                                    tem1+= com[j+k]['User Count'][s]
+                        tem2.append(tem1/4)
+                    cum_count.append(tem2)
+
+
+                for i in range(len(cum_count)):
+                    cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
+
+                for i in range(len(cum_count)):
+                    st.write(f'Comparing the count of {uni_name[i]} Yearwise:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=cnt[i])
+                    plt.ylabel('User Count')
+                    plt.xlabel('Year')
+                    plt.title(f'Comparing the count of {uni_name[i]} Yearwise:') 
+                    plt.plot(cnt[i][0], cnt[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+                cum_amt=[]
+                for i in uni_name:
+                    tem2 = []
+                    for j in range(0,len(com),4):
+                        tem1 = 0
+                        for k in range(4):
+                            for s in range(len(uni_name)):
+                                if i == com[j+k]['Brand'][s]:
+                                    tem1+= com[j+k]['Percentage(%)'][s]
+                        tem2.append(tem1/4)
+                    cum_amt.append(tem2)
+
+
+                for i in range(len(cum_amt)):
+                    amt.append(pd.DataFrame(list(zip(yr,cum_amt[i]))))
+
+                for i in range(len(cum_amt)):
+                    st.write(f'Comparing the Amount of {uni_name[i]} Yearwise:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=amt[i])
+                    plt.ylabel('Percentage(%)')
+                    plt.xlabel('Year')
+                    plt.title(f'Comparing the Amount of {uni_name[i]} Yearwise:') 
+                    plt.plot(amt[i][0], amt[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+                yw=[]
+                yrs=['2018','2019','2020','2021']
+                for i in yrs:
+                    tent1=[]
+                    for j in range(len(cnt)):
+                        tent=[]
+                        for s in range(len(cnt[j][0])):
+                            if i == cnt[j][0][s]:
+                                tent= cnt[j][1][s]
+                        tent1.append(tent)
+                    yw.append(tent1)
+
+
+                yy=[]
+                for i in range(len(yw)):
+                    yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+
+
+                for i in range(len(yw)):
+                    st.write(f'Comparing the Count for the {yrs[i]}:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=yy[i])
+                    plt.ylabel('User Count')
+                    plt.xlabel('Phone Companies')
+                    plt.xticks(rotation=90)
+                    plt.title(f'Comparing the Count for the {yrs[i]}:') 
+                    plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+                yw=[]
+                yrs=['2018','2019','2020','2021']
+                for i in yrs:
+                    tent1=[]
+                    for j in range(len(amt)):
+                        tent=[]
+                        for s in range(len(amt[j][0])):
+                            if i == amt[j][0][s]:
+                                tent= amt[j][1][s]
+                        tent1.append(tent)
+                    yw.append(tent1)
+
+
+                yy=[]
+                for i in range(len(yw)):
+                    yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+
+    #            st.write(yy[0][1][0][0])
+
+                for i in range(len(yw)):
+                    st.write(f'Comparing the Percentage(%) for the {yrs[i]}:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=yy[i])
+                    plt.ylabel('Percentage(%)')
+                    plt.xlabel('Phone Companies')
+                    plt.xticks(rotation=90)
+                    plt.title(f'Comparing the Percentage(%) for the {yrs[i]}:') 
+                    plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+
+            if am == 'map' and tu=='transaction':
+                for i in yr:
+                    base_path1 = os.path.join(sbase_path, f'{i}')
+
+                    sd1=[]
+                    sd2=[]
+                    sd3=[]
+                    sd4=[]
+
+
+                    qt = ['1','2','3','4']
+                    for j in qt:
+
+                        base_path2 = os.path.join(base_path1, f'{j}.json')
+
+                        with open(base_path2, 'r') as file:
+                            data = file.read()
+                            # Parse the JSON data
+                            data = json.loads(data)
+
+                            temp1=[]
+                            temp2=[]
+                            temp3=[]
+                            temp4=[]
+                            tn1 = []
+                            tn2 = []
+
+                            if 'hoverDataList' in data['data'] and isinstance(data['data']['hoverDataList'], list):
+                                # Iterate over the transaction data and extract relevant details
+                                for j in range(len(data['data']['hoverDataList'])):
+                                    temp1.append(data['data']['hoverDataList'][j].get('name',0))
+                                    temp2.append(data['data']['hoverDataList'][j]['metric'][0].get('type',''))
+                                    temp3.append(data['data']['hoverDataList'][j]['metric'][0].get('count',0))
+                                    temp4.append(data['data']['hoverDataList'][j]['metric'][0].get('amount',0))
+                                    
+                            sd1.append(temp1)
+                            sd2.append(temp2)
+                            sd3.append(temp3)
+                            sd4.append(temp4)
+
+                            com.append(pd.DataFrame({'Name': sd1[-1], 'Type': sd2[-1], 'Count': sd3[-1], 'Amount': sd4[-1]}))
+
+                            if 'hoverDataList' not in data['data'] and not isinstance(data['data']['hoverDataList'], list):
+                                com.append(pd.DataFrame(columns=['Name','Type', 'Count', 'Amount']))
+
+    ##           for i in range(len(com)):
+    ##                st.write(com[i])
+
+                uni_name = com[0]['Name'].unique()
+    ##            st.write(uni_name)
+    #            cc = st.checkbox('Count Details')
+    #            if cc:
+                cum_count=[]
+                for i in uni_name:
+                    tem2 = []
+                    for j in range(0,len(com),4):
+                        tem1 = 0
+                        for k in range(4):
+                            for s in range(len(uni_name)):
+                                if i == com[j+k]['Name'][s]:
+                                    tem1+= com[j+k]['Count'][s]
+                        tem2.append(tem1/4)
+                    cum_count.append(tem2)
+
+
+
+                for i in range(len(cum_count)):
+                    cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
+                
+
+                for i in range(len(cum_count)):
+                    st.write(f'Comparing the count of {uni_name[i]} Yearwise:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=cnt[i])
+                    plt.ylabel('Count')
+                    plt.xlabel('Year')
+                    plt.title(f'Comparing the count of {uni_name[i]} Yearwise:') 
+                    plt.plot(cnt[i][0], cnt[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+
+                cum_amt=[]
+                for i in uni_name:
+                    tem2 = []
+                    for j in range(0,len(com),4):
+                        tem1 = 0
+                        for k in range(4):
+                            for s in range(len(uni_name)):
+                                if i == com[j+k]['Name'][s]:
+                                    tem1+= com[j+k]['Amount'][s]
+                        tem2.append(tem1/4)
+                    cum_amt.append(tem2)
+
+
+                for i in range(len(cum_amt)):
+                    amt.append(pd.DataFrame(list(zip(yr,cum_amt[i]))))
+
+                for i in range(len(cum_amt)):
+                    st.write(f'Comparing the Amount of {uni_name[i]} Yearwise:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=amt[i])
+                    plt.ylabel('Amount')
+                    plt.xlabel('Year')
+                    plt.title(f'Comparing the Amount of {uni_name[i]} Yearwise:') 
+                    plt.plot(amt[i][0], amt[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+                yw=[]
+                yrs=['2018','2019','2020','2021','2022']
+                for i in yrs:
+                    tent1=[]
+                    for j in range(len(cnt)):
+                        tent=[]
+                        for s in range(len(cnt[j][0])):
+                            if i == cnt[j][0][s]:
+                                tent= cnt[j][1][s]
+                        tent1.append(tent)
+                    yw.append(tent1)
+
+
+                yy=[]
+                for i in range(len(yw)):
+                    yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+
+                for i in range(len(yw)):
+                    st.write(f'Comparing the Label for the {yrs[i]}:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=yy[i])
+                    plt.ylabel('Count')
+                    plt.xlabel('District')
+                    plt.xticks(rotation=90)
+                    plt.title(f'Comparing the Label for the {yrs[i]}:') 
+                    plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+                yw=[]
+                yrs=['2018','2019','2020','2021','2022']
+                for i in yrs:
+                    tent1=[]
+                    for j in range(len(amt)):
+                        tent=[]
+                        for s in range(len(amt[j][0])):
+                            if i == amt[j][0][s]:
+                                tent= amt[j][1][s]
+                        tent1.append(tent)
+                    yw.append(tent1)
+
+
+                yy=[]
+                for i in range(len(yw)):
+                    yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+
+                for i in range(len(yw)):
+                    st.write(f'Comparing the Amount for the {yrs[i]}:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=yy[i])
+                    plt.ylabel('Amount')
+                    plt.xlabel('Label')
+                    plt.xticks(rotation=90)
+                    plt.title(f'Comparing the Amount for the {yrs[i]}:') 
+                    plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+            if am == 'map' and tu=='user':
+                for i in yr:
+                    base_path1 = os.path.join(sbase_path, f'{i}')
+
+                    sd1=[]
+                    sd2=[]
+                    sd3=[]
+                    sd4=[]
+
+
+                    qt = ['1','2','3','4']
+                    for j in qt:
+
+                        base_path2 = os.path.join(base_path1, f'{j}.json')
+
+                        with open(base_path2, 'r') as file:
+                            data = file.read()
+                            # Parse the JSON data
+                            data = json.loads(data)
+
+                            temp1=[]
+                            temp2=[]
+
+                            if 'hoverData' in data['data'] :
+                                # Iterate over the transaction data and extract relevant details
+                                for j in range(len(data['data']['hoverData'])):
+                                    temp1.append(list(data['data']['hoverData'].keys())[j])
+                                    temp2.append(list(data['data']['hoverData'].values())[j]['registeredUsers'])
+                                    
+                            sd1.append(temp1)
+                            sd2.append(temp2)
+
+                            com.append(pd.DataFrame({'Name': sd1[-1], 'Registered Users': sd2[-1]}))
+                        
+
+                            if 'hoverData' not in data['data'] :
+                                com.append(pd.DataFrame(columns=['Name','Registered Users']))
+
+                uni_name = com[0]['Name'].unique()
+
+                cum_count=[]
+
+                for i in uni_name:
+                    tem2 = []
+                    for j in range(0,len(com),4):
+                        tem1 = 0
+                        for k in range(4):
+                            for s in range(len(uni_name)):
+                                if i == com[j+k]['Name'][s]:
+                                    tem1+= com[j+k]['Registered Users'][s]
+                        tem2.append(tem1/4)
+                    cum_count.append(tem2)
+
+
+
+                for i in range(len(cum_count)):
+                    cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
+
+                for i in range(len(cum_count)):
+                    st.write(f'Comparing the Registered Users count of {uni_name[i]} Yearwise:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=cnt[i])
+                    plt.ylabel('Registered Users')
+                    plt.xlabel('Year')
+                    plt.title(f'Comparing the Registered Users count of {uni_name[i]} Yearwise:') 
+                    plt.plot(cnt[i][0], cnt[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+
+                yw=[]
+                yrs=['2018','2019','2020','2021','2022']
+                for i in yrs:
+                    tent1=[]
+                    for j in range(len(cnt)):
+                        tent=[]
+                        for s in range(len(cnt[j][0])):
+                            if i == cnt[j][0][s]:
+                                tent= cnt[j][1][s]
+                        tent1.append(tent)
+                    yw.append(tent1)
+
+
+                yy=[]
+                for i in range(len(yw)):
+                    yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+
+
+                for i in range(len(yw)):
+                    st.write(f'Comparing the Registered Users Count for the {yrs[i]}:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=yy[i])
+                    plt.ylabel('User Count')
+                    plt.xlabel('Name')
+                    plt.xticks(rotation=90)
+                    plt.title(f'Comparing the Registered Users Count for the {yrs[i]}:') 
+                    plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+            if am == 'top' and tu=='transaction':
+                com1=[]
+                com2=[]
+                com3=[]
+                for i in yr:
+                    base_path1 = os.path.join(base_path, f'{i}')
+
+                    sd1=[]
+                    sd2=[]
+                    sd3=[]
+                    sd4=[]
+                    sd5=[]
+                    sd6=[]
+                    sd7=[]
+                    sd8=[]
+                    sd9=[]
+                    sd10=[]
+                    sd11=[]
+                    sd12=[]
+
+
+                    qt = ['1','2','3','4']
+                    for j in qt:
+
+                        base_path2 = os.path.join(base_path1, f'{j}.json')
+
+                        with open(base_path2, 'r') as file:
+                            data = file.read()
+                            # Parse the JSON data
+                            data = json.loads(data)
+                            
+                            temp5=[]
+                            temp6=[]
+                            temp7=[]
+                            temp8=[]
+
+                            if 'districts' in data['data'] and isinstance(data['data']['districts'], list):                    
+                                for j in range(len(data['data']['districts'])):
+                                    temp5.append(data['data']['districts'][j]['entityName'])
+                                    temp6.append(data['data']['districts'][j]['metric']['type'])
+                                    temp7.append(data['data']['districts'][j]['metric']['count'])
+                                    temp8.append(data['data']['districts'][j]['metric']['amount'])      
+                            
+                            sd5.append(temp5)
+                            sd6.append(temp6)
+                            sd7.append(temp7)
+                            sd8.append(temp8)     
+
+                            com2.append(pd.DataFrame({'District Name': sd5[-1], 'Type': sd6[-1], 'Count': sd7[-1], 'Amount': sd8[-1]}))
+
+                            if 'states' not in data['data'] and not isinstance(data['data']['states'], list):
+                                com2.append(pd.DataFrame(columns=['District Name','Type', 'Count', 'Amount']))
+
+                            temp9=[]
+                            temp10=[]
+                            temp11=[]
+                            temp12=[]
+
+                            if 'pincodes' in data['data'] and isinstance(data['data']['pincodes'], list):                    
+                                for j in range(len(data['data']['pincodes'])):
+                                    temp9.append(data['data']['pincodes'][j]['entityName'])
+                                    temp10.append(data['data']['pincodes'][j]['metric']['type'])
+                                    temp11.append(data['data']['pincodes'][j]['metric']['count'])
+                                    temp12.append(data['data']['pincodes'][j]['metric']['amount'])      
+
+                            sd9.append(temp9)
+                            sd10.append(temp10)
+                            sd11.append(temp11)
+                            sd12.append(temp12)                
+
+                            com3.append(pd.DataFrame({'Pincode': sd9[-1], 'Type': sd10[-1], 'Count': sd11[-1], 'Amount': sd12[-1]}))
+
+                            if 'pincodes' not in data['data'] and not isinstance(data['data']['pincodes'], list):
+                                com3.append(pd.DataFrame(columns=['Pincode','Type', 'Count', 'Amount']))
+
+
+                uni_name = com2[0]['District Name'].unique()
+
+                cum_count=[]
+                for i in uni_name:
+                    tem2 = []
+                    for j in range(0,len(com2),4):
+                        tem1 = 0
+                        for k in range(4):
+                            for s in range(len(uni_name)):
+                                if i == com2[j+k]['District Name'][s]:
+                                    tem1+= com2[j+k]['Count'][s]
+                        tem2.append(tem1/4)
+                    cum_count.append(tem2)
+
+                for i in range(len(cum_count)):
+                    cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
+
+
+                for i in range(len(cum_count)):
+                    st.write(f'Comparing the count of {uni_name[i]} District Yearwise:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=cnt[i])
+                    plt.ylabel('Count')
+                    plt.xlabel('Year')
+                    plt.title(f'Comparing the count of {uni_name[i]} District Yearwise:') 
+                    plt.plot(cnt[i][0], cnt[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+
+                cum_amt=[]
+                for i in uni_name:
+                    tem2 = []
+                    for j in range(0,len(com2),4):
+                        tem1 = 0
+                        for k in range(4):
+                            for s in range(len(uni_name)):
+                                if i == com2[j+k]['District Name'][s]:
+                                    tem1+= com2[j+k]['Amount'][s]
+                        tem2.append(tem1/4)
+                    cum_amt.append(tem2)
+
+
+
+                for i in range(len(cum_amt)):
+                    amt.append(pd.DataFrame(list(zip(yr,cum_amt[i]))))
+
+                for i in range(len(cum_amt)):
+                    st.write(f'Comparing the Amount of {uni_name[i]} District Yearwise:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=amt[i])
+                    plt.ylabel('Amount')
+                    plt.xlabel('Year')
+                    plt.title(f'Comparing the Amount of {uni_name[i]} District Yearwise:') 
+                    plt.plot(amt[i][0], amt[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+
+                yw=[]
+                yrs=['2018','2019','2020','2021','2022']
+                for i in yrs:
+                    tent1=[]
+                    for j in range(len(cnt)):
+                        tent=[]
+                        for s in range(len(cnt[j][0])):
+                            if i == cnt[j][0][s]:
+                                tent= cnt[j][1][s]
+                        tent1.append(tent)
+                    yw.append(tent1)
+
+
+                yy=[]
+                for i in range(len(yw)):
+                    yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+
+
+                for i in range(len(yw)):
+                    st.write(f'Comparing the District Count for the {yrs[i]}:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=yy[i])
+                    plt.ylabel('Count')
+                    plt.xlabel('District Name')
+                    plt.xticks(rotation=90)
+                    plt.title(f'Comparing the District Count for the {yrs[i]}:') 
+                    plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+                yw=[]
+                yrs=['2018','2019','2020','2021','2022']
+                for i in yrs:
+                    tent1=[]
+                    for j in range(len(amt)):
+                        tent=[]
+                        for s in range(len(amt[j][0])):
+                            if i == amt[j][0][s]:
+                                tent= amt[j][1][s]
+                        tent1.append(tent)
+                    yw.append(tent1)
+
+
+                yy=[]
+                for i in range(len(yw)):
+                    yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+
+
+                for i in range(len(yw)):
+                    st.write(f'Comparing the District Amount for the {yrs[i]}:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=yy[i])
+                    plt.ylabel('Amount')
+                    plt.xlabel('District Name')
+                    plt.xticks(rotation=90)
+                    plt.title(f'Comparing the District Amount for the {yrs[i]}:') 
+                    plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+
+
+                uni_name = com3[0]['Pincode'].unique()
+
+                cum_count=[]
+                for i in uni_name:
+                    tem2 = []
+                    for j in range(0,len(com3),4):
+                        tem1 = 0
+                        for k in range(4):
+                            for s in range(len(uni_name)):
+                                if i == com3[j+k]['Pincode'][s]:
+                                    tem1+= com3[j+k]['Count'][s]
+                        tem2.append(tem1/4)
+                    cum_count.append(tem2)
+
+
+                for i in range(len(cum_count)):
+                    cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
+            
+
+
+                for i in range(len(cum_count)):
+                    st.write(f'Comparing the count of {uni_name[i]} PinCode Yearwise:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=cnt[i])
+                    plt.ylabel('Count')
+                    plt.xlabel('Year')
+                    plt.title(f'Comparing the count of {uni_name[i]} PinCode Yearwise:') 
+                    plt.plot(cnt[i][0], cnt[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+
+                cum_amt=[]
+                for i in uni_name:
+                    tem2 = []
+                    for j in range(0,len(com3),4):
+                        tem1 = 0
+                        for k in range(4):
+                            for s in range(len(uni_name)):
+                                if i == com3[j+k]['Pincode'][s]:
+                                    tem1+= com3[j+k]['Amount'][s]
+                        tem2.append(tem1/4)
+                    cum_amt.append(tem2)
+
+
+                for i in range(len(cum_amt)):
+                    amt.append(pd.DataFrame(list(zip(yr,cum_amt[i]))))
+
+                for i in range(len(cum_amt)):
+                    st.write(f'Comparing the Amount of {uni_name[i]} PinCode Yearwise:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=amt[i])
+                    plt.ylabel('Amount')
+                    plt.xlabel('Year')
+                    plt.title(f'Comparing the Amount of {uni_name[i]} PinCode Yearwise:') 
+                    plt.plot(amt[i][0], amt[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+
+                yw=[]
+                yrs=['2018','2019','2020','2021','2022']
+                for i in yrs:
+                    tent1=[]
+                    for j in range(len(cnt)):
+                        tent=[]
+                        for s in range(len(cnt[j][0])):
+                            if i == cnt[j][0][s]:
+                                tent= cnt[j][1][s]
+                        tent1.append(tent)
+                    yw.append(tent1)
+
+
+                yy=[]
+                for i in range(len(yw)):
+                    yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+
+                for i in range(len(yw)):
+                    st.write(f'Comparing the PinCode Count for the {yrs[i]}:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=yy[i])
+                    plt.ylabel('Count')
+                    plt.xlabel('Pincode')
+                    plt.xticks(rotation=90)
+                    plt.title(f'Comparing the PinCode Count for the {yrs[i]}:') 
+                    plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+                yw=[]
+                yrs=['2018','2019','2020','2021','2022']
+                for i in yrs:
+                    tent1=[]
+                    for j in range(len(amt)):
+                        tent=[]
+                        for s in range(len(amt[j][0])):
+                            if i == amt[j][0][s]:
+                                tent= amt[j][1][s]
+                        tent1.append(tent)
+                    yw.append(tent1)
+
+
+                yy=[]
+                for i in range(len(yw)):
+                    yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+
+
+                for i in range(len(yw)):
+                    st.write(f'Comparing the PinCode Amount for the {yrs[i]}:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=yy[i])
+                    plt.ylabel('Amount')
+                    plt.xlabel('Pincode')
+                    plt.xticks(rotation=90)
+                    plt.title(f'Comparing the PinCode Amount for the {yrs[i]}:') 
+                    plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+
+            if am == 'top' and tu=='user':
+                com1=[]
+                com2=[]
+                com3=[]
+                for i in yr:
+                    base_path1 = os.path.join(base_path, f'{i}')
+
+                    sd1=[]
+                    sd2=[]
+                    sd3=[]
+                    sd4=[]
+                    sd5=[]
+                    sd6=[]
+
+
+                    qt = ['1','2','3','4']
+                    for j in qt:
+
+                        base_path2 = os.path.join(base_path1, f'{j}.json')
+
+                        with open(base_path2, 'r') as file:
+                            data = file.read()
+                            # Parse the JSON data
+                            data = json.loads(data)
+
+                            temp1=[]
+                            temp2=[]
+
+                            if 'states' in data['data'] and isinstance(data['data']['states'], list): 
+                                # Iterate over the transaction data and extract relevant details
+                                for j in range(len(data['data']['states'])):
+                                    temp1.append(data['data']['states'][j]['name'])
+                                    temp2.append(data['data']['states'][j]['registeredUsers'])
+                                
+                            sd1.append(temp1)
+                            sd2.append(temp2)
+
+                            com1.append(pd.DataFrame({'State Name': sd1[-1], 'Registered Users': sd2[-1]}))
+
+                            if 'states' not in data['data'] and not isinstance(data['data']['states'], list):
+                                com1.append(pd.DataFrame(columns=['State Name','Registered Users']))
+                            
+                            
+                            temp3=[]
+                            temp4=[]
+
+                            if 'districts' in data['data'] and isinstance(data['data']['districts'], list):
+                                for j in range(len(data['data']['districts'])):
+                                    temp3.append(data['data']['districts'][j]['name'])
+                                    temp4.append(data['data']['districts'][j]['registeredUsers'])    
+                            
+                            sd3.append(temp3)
+                            sd4.append(temp4)
+
+                            com2.append(pd.DataFrame({'District Name': sd3[-1], 'Registered Users': sd4[-1]}))
+
+                            if 'districts' not in data['data'] and not isinstance(data['data']['districts'], list):
+                                com2.append(pd.DataFrame(columns=['District Name','Registered Users']))
+
+                            temp5=[]
+                            temp6=[]
+
+                            if 'pincodes' in data['data'] and isinstance(data['data']['pincodes'], list):
+                                for j in range(len(data['data']['pincodes'])):
+                                    temp5.append(data['data']['pincodes'][j]['name'])
+                                    temp6.append(data['data']['pincodes'][j]['registeredUsers'])     
+                            
+                            sd5.append(temp5)
+                            sd6.append(temp6)
+
+                            com3.append(pd.DataFrame({'Pincode': sd5[-1], 'Registered Users': sd6[-1]}))
+
+                            if 'districts' not in data['data'] and not isinstance(data['data']['districts'], list):
+                                com3.append(pd.DataFrame(columns=['Pincode','Registered Users']))  
+
+                uni_name = com2[0]['District Name'].unique()
+
+                cum_count=[]
+                for i in uni_name:
+                    tem2 = []
+                    for j in range(0,len(com2),4):
+                        tem1 = 0
+                        for k in range(4):
+                            for s in range(len(uni_name)):
+                                if i == com2[j+k]['District Name'][s]:
+                                    tem1+= com2[j+k]['Registered Users'][s]
+                        tem2.append(tem1/4)
+                    cum_count.append(tem2)
+
+
+
+
+                for i in range(len(cum_count)):
+                    cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
+                
+
+
+
+                for i in range(len(cum_count)):
+                    st.write(f'Comparing the Registered Users of {uni_name[i]} District Yearwise:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=cnt[i])
+                    plt.ylabel('Registered Users')
+                    plt.xlabel('Year')
+                    plt.title(f'Comparing the Registered Users of {uni_name[i]} District Yearwise:') 
+                    plt.plot(cnt[i][0], cnt[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+
+                yw=[]
+                yrs=['2018','2019','2020','2021','2022']
+                for i in yrs:
+                    tent1=[]
+                    for j in range(len(cnt)):
+                        tent=[]
+                        for s in range(len(cnt[j][0])):
+                            if i == cnt[j][0][s]:
+                                tent= cnt[j][1][s]
+                        tent1.append(tent)
+                    yw.append(tent1)
+
+
+                yy=[]
+                for i in range(len(yw)):
+                    yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+
+
+                for i in range(len(yw)):
+                    st.write(f'Comparing the District Count for the {yrs[i]}:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=yy[i])
+                    plt.ylabel('Registered Users')
+                    plt.xlabel('District Name')
+                    plt.xticks(rotation=90)
+                    plt.title(f'Comparing the District Count for the {yrs[i]}:') 
+                    plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+
+
+
+                uni_name = com3[0]['Pincode'].unique()
+
+                cum_count=[]
+                for i in uni_name:
+                    tem2 = []
+                    for j in range(0,len(com3),4):
+                        tem1 = 0
+                        for k in range(4):
+                            for s in range(len(uni_name)):
+                                if i == com3[j+k]['Pincode'][s]:
+                                    tem1+= com3[j+k]['Registered Users'][s]
+                        tem2.append(tem1/4)
+                    cum_count.append(tem2)
+
+
+                for i in range(len(cum_count)):
+                    cnt.append(pd.DataFrame(list(zip(yr,cum_count[i]))))
+
+
+
+                for i in range(len(cum_count)):
+                    st.write(f'Comparing the Registered Users of {uni_name[i]} PinCode Yearwise:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=cnt[i])
+                    plt.ylabel('Registered Users')
+                    plt.xlabel('Year')
+                    plt.title(f'Comparing the Registered Users of {uni_name[i]} PinCode Yearwise:') 
+                    plt.plot(cnt[i][0], cnt[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
+
+
+                yw=[]
+                yrs=['2018','2019','2020','2021','2022']
+                for i in yrs:
+                    tent1=[]
+                    for j in range(len(cnt)):
+                        tent=[]
+                        for s in range(len(cnt[j][0])):
+                            if i == cnt[j][0][s]:
+                                tent= cnt[j][1][s]
+                        tent1.append(tent)
+                    yw.append(tent1)
+
+
+                yy=[]
+                for i in range(len(yw)):
+                    yy.append(pd.DataFrame(list(zip(uni_name,yw[i]))))
+
+                for i in range(len(yw)):
+                    st.write(f'Comparing the PinCode Count for the {yrs[i]}:')
+                    fig = plt.figure(figsize=(10, 4))
+                    sns.barplot(x=0,y=1,data=yy[i])
+                    plt.ylabel('Registered Users')
+                    plt.xlabel('Pincode')
+                    plt.xticks(rotation=90)
+                    plt.title(f'Comparing the PinCode Count for the {yrs[i]}:') 
+                    plt.plot(yy[i][0], yy[i][1], color='blue', marker='o')
+                    st.pyplot(fig)
 
 def geolive(tu):
     kf=1000
